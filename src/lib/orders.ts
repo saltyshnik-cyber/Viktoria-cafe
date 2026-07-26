@@ -1,58 +1,80 @@
-import fs from "fs";
-import path from "path";
 import type { Order, OrderStatus } from "@/types/order";
+import { sql, ensureSchema } from "@/lib/db";
 
-// Файловое хранилище для локальной разработки — в Next.js модуль с
-// in-memory Map получает отдельный инстанс в route handler'ах и в RSC,
-// поэтому состояние не шарится. На проде (особенно serverless) нужна
-// настоящая БД (Postgres/Prisma и т.п.) — это временное решение.
-const DATA_DIR = path.join(process.cwd(), ".data");
-const DATA_FILE = path.join(DATA_DIR, "orders.json");
+type OrderRow = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  comment: string | null;
+  items: Order["items"];
+  total_price: number;
+  payment_method: Order["paymentMethod"];
+  status: OrderStatus;
+  payment_id: string | null;
+  created_at: string | Date;
+};
 
-function readAll(): Record<string, Order> {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-  } catch {
-    return {};
-  }
+function rowToOrder(row: OrderRow): Order {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    address: row.address,
+    comment: row.comment ?? undefined,
+    items: row.items,
+    totalPrice: row.total_price,
+    paymentMethod: row.payment_method,
+    status: row.status,
+    paymentId: row.payment_id ?? undefined,
+    createdAt:
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : new Date(row.created_at).toISOString(),
+  };
 }
 
-function writeAll(orders: Record<string, Order>) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(orders, null, 2));
-  } catch (error) {
-    throw new Error(
-      "Не удалось сохранить заказ: файловое хранилище недоступно на этом хостинге (нужна БД для serverless-окружений).",
-      { cause: error },
-    );
-  }
+export async function saveOrder(order: Order): Promise<void> {
+  await ensureSchema();
+  await sql`
+    INSERT INTO orders (id, name, phone, address, comment, items, total_price, payment_method, status, payment_id, created_at)
+    VALUES (
+      ${order.id}, ${order.name}, ${order.phone}, ${order.address}, ${order.comment ?? null},
+      ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.paymentMethod},
+      ${order.status}, ${order.paymentId ?? null}, ${order.createdAt}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      phone = EXCLUDED.phone,
+      address = EXCLUDED.address,
+      comment = EXCLUDED.comment,
+      items = EXCLUDED.items,
+      total_price = EXCLUDED.total_price,
+      payment_method = EXCLUDED.payment_method,
+      status = EXCLUDED.status,
+      payment_id = EXCLUDED.payment_id
+  `;
 }
 
-export function saveOrder(order: Order) {
-  const orders = readAll();
-  orders[order.id] = order;
-  writeAll(orders);
+export async function getOrder(id: string): Promise<Order | undefined> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM orders WHERE id = ${id}`) as OrderRow[];
+  return rows[0] ? rowToOrder(rows[0]) : undefined;
 }
 
-export function getOrder(id: string): Order | undefined {
-  return readAll()[id];
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
+  await ensureSchema();
+  await sql`UPDATE orders SET status = ${status} WHERE id = ${id}`;
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus) {
-  const orders = readAll();
-  const order = orders[id];
-  if (!order) return;
-  orders[id] = { ...order, status };
-  writeAll(orders);
+export async function findOrderByPaymentId(paymentId: string): Promise<Order | undefined> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM orders WHERE payment_id = ${paymentId}`) as OrderRow[];
+  return rows[0] ? rowToOrder(rows[0]) : undefined;
 }
 
-export function findOrderByPaymentId(paymentId: string): Order | undefined {
-  return Object.values(readAll()).find((order) => order.paymentId === paymentId);
-}
-
-export function getAllOrders(): Order[] {
-  return Object.values(readAll()).sort((a, b) =>
-    a.createdAt < b.createdAt ? 1 : -1,
-  );
+export async function getAllOrders(): Promise<Order[]> {
+  await ensureSchema();
+  const rows = (await sql`SELECT * FROM orders ORDER BY created_at DESC`) as OrderRow[];
+  return rows.map(rowToOrder);
 }

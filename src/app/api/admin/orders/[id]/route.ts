@@ -15,13 +15,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Некорректный статус" }, { status: 400 });
   }
 
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order) {
     return NextResponse.json({ error: "Заказ не найден" }, { status: 404 });
   }
 
   try {
-    updateOrderStatus(id, status);
+    await updateOrderStatus(id, status);
   } catch (error) {
     console.error("Не удалось изменить статус заказа:", error);
     return NextResponse.json(

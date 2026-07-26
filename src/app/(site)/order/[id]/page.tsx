@@ -30,7 +30,7 @@ export default async function OrderConfirmationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = getOrder(id);
+  const order = await getOrder(id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">

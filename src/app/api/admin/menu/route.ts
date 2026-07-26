@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const item = createMenuItem({
+    const item = await createMenuItem({
       categoryId: body.categoryId,
       name: body.name,
       description: body.description ?? "",

@@ -21,7 +21,7 @@ export async function PATCH(
   }
 
   try {
-    const item = updateMenuItem(id, {
+    const item = await updateMenuItem(id, {
       categoryId: body.categoryId,
       name: body.name,
       description: body.description ?? "",
@@ -51,7 +51,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const deleted = deleteMenuItem(id);
+    const deleted = await deleteMenuItem(id);
 
     if (!deleted) {
       return NextResponse.json({ error: "Блюдо не найдено" }, { status: 404 });

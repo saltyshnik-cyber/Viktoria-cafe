@@ -13,11 +13,11 @@ export async function POST(request: Request) {
 
   // Телу вебхука не доверяем напрямую — перепроверяем статус платежа через API ЮKassa
   const payment = await getPayment(paymentId);
-  const order = findOrderByPaymentId(paymentId);
+  const order = await findOrderByPaymentId(paymentId);
 
   if (order && payment.status === "succeeded" && order.status !== "paid") {
     try {
-      updateOrderStatus(order.id, "paid");
+      await updateOrderStatus(order.id, "paid");
     } catch (error) {
       console.error("Не удалось обновить статус заказа:", error);
     }

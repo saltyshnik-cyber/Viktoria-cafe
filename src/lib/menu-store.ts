@@ -1,11 +1,5 @@
-import fs from "fs";
-import path from "path";
 import type { MenuItem } from "@/types/menu";
-
-// Файловое хранилище для локальной разработки, аналогично src/lib/orders.ts.
-// На проде нужна настоящая БД — это временное решение для одного сервера.
-const DATA_DIR = path.join(process.cwd(), ".data");
-const DATA_FILE = path.join(DATA_DIR, "menu.json");
+import { sql, ensureSchema } from "@/lib/db";
 
 const SEED_ITEMS: MenuItem[] = [
   {
@@ -169,60 +163,97 @@ const SEED_ITEMS: MenuItem[] = [
   },
 ];
 
-function readAll(): MenuItem[] {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-  } catch {
-    // Файла ещё нет (первый запуск) или диск недоступен для записи (serverless) —
-    // в обоих случаях просто отдаём исходные данные, не пытаясь ничего записать.
-    return SEED_ITEMS;
+type MenuItemRow = {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string;
+  weight: string;
+  price: number;
+  is_popular: boolean;
+};
+
+function rowToItem(row: MenuItemRow): MenuItem {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    name: row.name,
+    description: row.description,
+    weight: row.weight,
+    price: row.price,
+    isPopular: row.is_popular,
+  };
+}
+
+let seedReady: Promise<void> | null = null;
+
+function ready(): Promise<void> {
+  if (!seedReady) {
+    seedReady = (async () => {
+      await ensureSchema();
+      const rows = (await sql`SELECT COUNT(*)::int AS count FROM menu_items`) as {
+        count: number;
+      }[];
+      if (rows[0].count > 0) return;
+
+      for (const item of SEED_ITEMS) {
+        await sql`
+          INSERT INTO menu_items (id, category_id, name, description, weight, price, is_popular)
+          VALUES (${item.id}, ${item.categoryId}, ${item.name}, ${item.description}, ${item.weight}, ${item.price}, ${item.isPopular ?? false})
+          ON CONFLICT (id) DO NOTHING
+        `;
+      }
+    })();
   }
+  return seedReady;
 }
 
-function writeAll(items: MenuItem[]) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(items, null, 2));
-  } catch (error) {
-    throw new Error(
-      "Не удалось сохранить меню: файловое хранилище недоступно на этом хостинге (нужна БД для serverless-окружений).",
-      { cause: error },
-    );
-  }
+export async function getAllMenuItems(): Promise<MenuItem[]> {
+  await ready();
+  const rows = (await sql`
+    SELECT * FROM menu_items ORDER BY category_id, name
+  `) as MenuItemRow[];
+  return rows.map(rowToItem);
 }
 
-export function getAllMenuItems(): MenuItem[] {
-  return readAll();
+export async function getMenuItemsByCategory(categoryId: string): Promise<MenuItem[]> {
+  await ready();
+  const rows = (await sql`
+    SELECT * FROM menu_items WHERE category_id = ${categoryId} ORDER BY name
+  `) as MenuItemRow[];
+  return rows.map(rowToItem);
 }
 
-export function getMenuItemsByCategory(categoryId: string): MenuItem[] {
-  return readAll().filter((item) => item.categoryId === categoryId);
+export async function createMenuItem(data: Omit<MenuItem, "id">): Promise<MenuItem> {
+  await ready();
+  const id = crypto.randomUUID().slice(0, 8);
+  await sql`
+    INSERT INTO menu_items (id, category_id, name, description, weight, price, is_popular)
+    VALUES (${id}, ${data.categoryId}, ${data.name}, ${data.description}, ${data.weight}, ${data.price}, ${data.isPopular ?? false})
+  `;
+  return { ...data, id };
 }
 
-export function createMenuItem(data: Omit<MenuItem, "id">): MenuItem {
-  const items = readAll();
-  const item: MenuItem = { ...data, id: crypto.randomUUID().slice(0, 8) };
-  items.push(item);
-  writeAll(items);
-  return item;
-}
-
-export function updateMenuItem(
+export async function updateMenuItem(
   id: string,
   data: Omit<MenuItem, "id">,
-): MenuItem | undefined {
-  const items = readAll();
-  const index = items.findIndex((item) => item.id === id);
-  if (index === -1) return undefined;
-  items[index] = { ...data, id };
-  writeAll(items);
-  return items[index];
+): Promise<MenuItem | undefined> {
+  await ready();
+  const rows = (await sql`
+    UPDATE menu_items
+    SET category_id = ${data.categoryId}, name = ${data.name}, description = ${data.description},
+        weight = ${data.weight}, price = ${data.price}, is_popular = ${data.isPopular ?? false}
+    WHERE id = ${id}
+    RETURNING id
+  `) as { id: string }[];
+  if (rows.length === 0) return undefined;
+  return { ...data, id };
 }
 
-export function deleteMenuItem(id: string): boolean {
-  const items = readAll();
-  const next = items.filter((item) => item.id !== id);
-  if (next.length === items.length) return false;
-  writeAll(next);
-  return true;
+export async function deleteMenuItem(id: string): Promise<boolean> {
+  await ready();
+  const rows = (await sql`DELETE FROM menu_items WHERE id = ${id} RETURNING id`) as {
+    id: string;
+  }[];
+  return rows.length > 0;
 }

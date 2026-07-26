@@ -5,8 +5,8 @@ import AdminMenuManager from "@/components/admin/AdminMenuManager";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminMenuPage() {
-  const items = getAllMenuItems();
+export default async function AdminMenuPage() {
+  const items = await getAllMenuItems();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">

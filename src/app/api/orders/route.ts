@@ -30,9 +30,8 @@ export async function POST(request: Request) {
     status: payload.paymentMethod === "card" ? "awaiting_payment" : "new",
   };
 
-  // TODO: сохранить заказ в постоянной БД вместо файла .data/orders.json
   try {
-    saveOrder(order);
+    await saveOrder(order);
   } catch (error) {
     console.error("Не удалось сохранить заказ:", error);
     return NextResponse.json(
@@ -67,7 +66,7 @@ export async function POST(request: Request) {
     });
 
     try {
-      saveOrder({ ...order, paymentId: payment.id });
+      await saveOrder({ ...order, paymentId: payment.id });
     } catch (error) {
       // Платёж в ЮKassa уже создан — не блокируем оплату клиенту, но
       // без этой записи вебхук не сможет сопоставить оплату с заказом.

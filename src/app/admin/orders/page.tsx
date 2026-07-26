@@ -5,8 +5,8 @@ import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminOrdersPage() {
-  const orders = getAllOrders();
+export default async function AdminOrdersPage() {
+  const orders = await getAllOrders();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">

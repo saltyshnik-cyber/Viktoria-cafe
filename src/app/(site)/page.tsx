@@ -1,9 +1,12 @@
-import { categories, getItemsByCategory } from "@/data/menu";
+import { categories } from "@/data/menu";
+import { getAllMenuItems } from "@/lib/menu-store";
 import MenuSection from "@/components/MenuSection";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const items = await getAllMenuItems();
+
   return (
     <>
       <section className="bg-primary/5">
@@ -23,7 +26,7 @@ export default function HomePage() {
           <MenuSection
             key={category.id}
             category={category}
-            items={getItemsByCategory(category.id)}
+            items={items.filter((item) => item.categoryId === category.id)}
           />
         ))}
       </div>

@@ -30,3 +30,6 @@ next-env.d.ts
 
 # локальные разрешения Claude Code для этой сессии
 .claude/settings.local.json
+
+.vercel
+.env*
