@@ -173,14 +173,22 @@ function readAll(): MenuItem[] {
   try {
     return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
   } catch {
-    writeAll(SEED_ITEMS);
+    // Файла ещё нет (первый запуск) или диск недоступен для записи (serverless) —
+    // в обоих случаях просто отдаём исходные данные, не пытаясь ничего записать.
     return SEED_ITEMS;
   }
 }
 
 function writeAll(items: MenuItem[]) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(items, null, 2));
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(items, null, 2));
+  } catch (error) {
+    throw new Error(
+      "Не удалось сохранить меню: файловое хранилище недоступно на этом хостинге (нужна БД для serverless-окружений).",
+      { cause: error },
+    );
+  }
 }
 
 export function getAllMenuItems(): MenuItem[] {

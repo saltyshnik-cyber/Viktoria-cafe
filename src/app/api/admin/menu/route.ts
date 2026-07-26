@@ -16,14 +16,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const item = createMenuItem({
-    categoryId: body.categoryId,
-    name: body.name,
-    description: body.description ?? "",
-    weight: body.weight ?? "",
-    price: body.price,
-    isPopular: Boolean(body.isPopular),
-  });
+  try {
+    const item = createMenuItem({
+      categoryId: body.categoryId,
+      name: body.name,
+      description: body.description ?? "",
+      weight: body.weight ?? "",
+      price: body.price,
+      isPopular: Boolean(body.isPopular),
+    });
 
-  return NextResponse.json({ item });
+    return NextResponse.json({ item });
+  } catch (error) {
+    console.error("Не удалось добавить блюдо:", error);
+    return NextResponse.json(
+      { error: "Не удалось сохранить блюдо" },
+      { status: 500 },
+    );
+  }
 }

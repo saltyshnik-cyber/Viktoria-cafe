@@ -18,8 +18,15 @@ function readAll(): Record<string, Order> {
 }
 
 function writeAll(orders: Record<string, Order>) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(orders, null, 2));
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(orders, null, 2));
+  } catch (error) {
+    throw new Error(
+      "Не удалось сохранить заказ: файловое хранилище недоступно на этом хостинге (нужна БД для serverless-окружений).",
+      { cause: error },
+    );
+  }
 }
 
 export function saveOrder(order: Order) {

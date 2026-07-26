@@ -16,7 +16,11 @@ export async function POST(request: Request) {
   const order = findOrderByPaymentId(paymentId);
 
   if (order && payment.status === "succeeded" && order.status !== "paid") {
-    updateOrderStatus(order.id, "paid");
+    try {
+      updateOrderStatus(order.id, "paid");
+    } catch (error) {
+      console.error("Не удалось обновить статус заказа:", error);
+    }
     await notifyPaidOrder({ ...order, status: "paid" });
   }
 

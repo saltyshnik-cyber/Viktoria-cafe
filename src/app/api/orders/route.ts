@@ -31,7 +31,15 @@ export async function POST(request: Request) {
   };
 
   // TODO: сохранить заказ в постоянной БД вместо файла .data/orders.json
-  saveOrder(order);
+  try {
+    saveOrder(order);
+  } catch (error) {
+    console.error("Не удалось сохранить заказ:", error);
+    return NextResponse.json(
+      { error: "Не удалось сохранить заказ. Попробуйте ещё раз или позвоните нам." },
+      { status: 500 },
+    );
+  }
 
   if (payload.paymentMethod === "cash") {
     // Заказ с оплатой курьеру подтверждён сразу — уведомляем кухню
@@ -58,7 +66,13 @@ export async function POST(request: Request) {
       returnUrl: `${origin}/order/${id}`,
     });
 
-    saveOrder({ ...order, paymentId: payment.id });
+    try {
+      saveOrder({ ...order, paymentId: payment.id });
+    } catch (error) {
+      // Платёж в ЮKassa уже создан — не блокируем оплату клиенту, но
+      // без этой записи вебхук не сможет сопоставить оплату с заказом.
+      console.error("Не удалось привязать paymentId к заказу:", error);
+    }
 
     return NextResponse.json({
       orderId: id,

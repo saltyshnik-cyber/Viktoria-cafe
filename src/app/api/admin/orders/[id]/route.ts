@@ -20,6 +20,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Заказ не найден" }, { status: 404 });
   }
 
-  updateOrderStatus(id, status);
+  try {
+    updateOrderStatus(id, status);
+  } catch (error) {
+    console.error("Не удалось изменить статус заказа:", error);
+    return NextResponse.json(
+      { error: "Не удалось сохранить изменение статуса" },
+      { status: 500 },
+    );
+  }
+
   return NextResponse.json({ ok: true });
 }

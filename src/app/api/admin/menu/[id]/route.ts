@@ -20,20 +20,28 @@ export async function PATCH(
     );
   }
 
-  const item = updateMenuItem(id, {
-    categoryId: body.categoryId,
-    name: body.name,
-    description: body.description ?? "",
-    weight: body.weight ?? "",
-    price: body.price,
-    isPopular: Boolean(body.isPopular),
-  });
+  try {
+    const item = updateMenuItem(id, {
+      categoryId: body.categoryId,
+      name: body.name,
+      description: body.description ?? "",
+      weight: body.weight ?? "",
+      price: body.price,
+      isPopular: Boolean(body.isPopular),
+    });
 
-  if (!item) {
-    return NextResponse.json({ error: "Блюдо не найдено" }, { status: 404 });
+    if (!item) {
+      return NextResponse.json({ error: "Блюдо не найдено" }, { status: 404 });
+    }
+
+    return NextResponse.json({ item });
+  } catch (error) {
+    console.error("Не удалось изменить блюдо:", error);
+    return NextResponse.json(
+      { error: "Не удалось сохранить изменения" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ item });
 }
 
 export async function DELETE(
@@ -41,11 +49,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const deleted = deleteMenuItem(id);
 
-  if (!deleted) {
-    return NextResponse.json({ error: "Блюдо не найдено" }, { status: 404 });
+  try {
+    const deleted = deleteMenuItem(id);
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Блюдо не найдено" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Не удалось удалить блюдо:", error);
+    return NextResponse.json(
+      { error: "Не удалось удалить блюдо" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ ok: true });
 }
