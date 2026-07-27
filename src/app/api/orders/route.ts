@@ -3,17 +3,25 @@ import type { Order, OrderPayload } from "@/types/order";
 import { saveOrder } from "@/lib/orders";
 import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/telegram";
+import { isBlank, isValidPhone } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as OrderPayload;
 
-  if (
-    !payload.name?.trim() ||
-    !payload.phone?.trim() ||
-    !payload.address?.trim()
-  ) {
+  if (isBlank(payload.name)) {
+    return NextResponse.json({ error: "Введите имя" }, { status: 400 });
+  }
+
+  if (isBlank(payload.phone) || !isValidPhone(payload.phone)) {
     return NextResponse.json(
-      { error: "Заполните имя, телефон и адрес доставки" },
+      { error: "Введите телефон в формате +7XXXXXXXXXX" },
+      { status: 400 },
+    );
+  }
+
+  if (isBlank(payload.address)) {
+    return NextResponse.json(
+      { error: "Введите адрес доставки" },
       { status: 400 },
     );
   }

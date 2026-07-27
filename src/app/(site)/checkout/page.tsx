@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { PaymentMethod } from "@/types/order";
+import { isBlank, isValidPhone } from "@/lib/validation";
+
+type FieldErrors = {
+  name?: string;
+  phone?: string;
+  address?: string;
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,6 +24,27 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  function validate(): FieldErrors {
+    const errors: FieldErrors = {};
+
+    if (isBlank(name)) {
+      errors.name = "Введите имя";
+    }
+
+    if (isBlank(phone)) {
+      errors.phone = "Введите телефон";
+    } else if (!isValidPhone(phone)) {
+      errors.phone = "Введите телефон в формате +7XXXXXXXXXX";
+    }
+
+    if (isBlank(address)) {
+      errors.address = "Введите адрес доставки";
+    }
+
+    return errors;
+  }
 
   if (items.length === 0) {
     return (
@@ -38,6 +66,13 @@ export default function CheckoutPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const errors = validate();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -103,7 +138,7 @@ export default function CheckoutPage() {
         </li>
       </ul>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium text-ink/70">
             Имя
@@ -112,10 +147,19 @@ export default function CheckoutPage() {
             id="name"
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-ink outline-none focus:border-primary"
+            onChange={(e) => {
+              setName(e.target.value);
+              if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: undefined });
+            }}
+            aria-invalid={Boolean(fieldErrors.name)}
+            className={`w-full rounded-xl border bg-white px-4 py-2 text-ink outline-none focus:border-primary ${
+              fieldErrors.name ? "border-red-400" : "border-black/10"
+            }`}
             placeholder="Как к вам обращаться"
           />
+          {fieldErrors.name && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+          )}
         </div>
 
         <div>
@@ -127,10 +171,19 @@ export default function CheckoutPage() {
             type="tel"
             required
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-ink outline-none focus:border-primary"
+            onChange={(e) => {
+              setPhone(e.target.value);
+              if (fieldErrors.phone) setFieldErrors({ ...fieldErrors, phone: undefined });
+            }}
+            aria-invalid={Boolean(fieldErrors.phone)}
+            className={`w-full rounded-xl border bg-white px-4 py-2 text-ink outline-none focus:border-primary ${
+              fieldErrors.phone ? "border-red-400" : "border-black/10"
+            }`}
             placeholder="+7 (___) ___-__-__"
           />
+          {fieldErrors.phone && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+          )}
         </div>
 
         <div>
@@ -141,10 +194,19 @@ export default function CheckoutPage() {
             id="address"
             required
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-ink outline-none focus:border-primary"
+            onChange={(e) => {
+              setAddress(e.target.value);
+              if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: undefined });
+            }}
+            aria-invalid={Boolean(fieldErrors.address)}
+            className={`w-full rounded-xl border bg-white px-4 py-2 text-ink outline-none focus:border-primary ${
+              fieldErrors.address ? "border-red-400" : "border-black/10"
+            }`}
             placeholder="Улица, дом, квартира/офис"
           />
+          {fieldErrors.address && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.address}</p>
+          )}
         </div>
 
         <div>
