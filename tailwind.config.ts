@@ -32,8 +32,8 @@ const config: Config = {
         },
         ash: "#a89d8e",
         warm: {
-          DEFAULT: "#f3ddb4",
-          light: "#ecd09a",
+          DEFAULT: "#3a2c1a",
+          light: "#4a3a23",
         },
       },
       fontFamily: {

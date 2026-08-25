@@ -191,18 +191,18 @@ export default function HomePage() {
       <section className="bg-warm py-20 sm:py-24">
         <div className="mx-auto grid max-w-6xl gap-14 px-4 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
-            <span className="font-mono text-xs uppercase tracking-[0.16em] text-river">
+            <span className="font-mono text-xs uppercase tracking-[0.16em] text-gold">
               О месте
             </span>
-            <h2 className="mt-2.5 text-3xl font-bold text-char sm:text-4xl">
+            <h2 className="mt-2.5 text-3xl font-bold text-parchment-light sm:text-4xl">
               Кухня на живом огне, у самой воды
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-ink/85">
+            <p className="mt-5 text-base leading-relaxed text-parchment/80">
               «Виктория» стоит на набережной у Площади Мира — просторный зал с
               панорамными окнами и открытая терраса с коваными грилями прямо
               над рекой. Мясо и овощи готовим на углях на глазах у гостей.
             </p>
-            <p className="mt-4 text-base leading-relaxed text-ink/85">
+            <p className="mt-4 text-base leading-relaxed text-parchment/80">
               В меню — шашлык, люля-кебаб, хачапури из дровяной печи и
               грузинские салаты. Подходит и для семейного обеда, и для вечера
               компанией на террасе с видом на закат над Енисеем.
@@ -288,10 +288,10 @@ export default function HomePage() {
       {/* Gallery */}
       <section className="bg-warm py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4">
-          <span className="font-mono text-xs uppercase tracking-[0.16em] text-ember">
+          <span className="font-mono text-xs uppercase tracking-[0.16em] text-gold">
             Атмосфера
           </span>
-          <h2 className="mb-10 mt-2.5 text-3xl font-bold text-char sm:text-4xl">
+          <h2 className="mb-10 mt-2.5 text-3xl font-bold text-parchment-light sm:text-4xl">
             Зал, терраса, вид на реку
           </h2>
         </div>
@@ -388,23 +388,23 @@ export default function HomePage() {
       <section id="kontakty" className="bg-warm py-20 sm:py-24">
         <div className="mx-auto grid max-w-6xl gap-14 px-4 md:grid-cols-2">
           <div>
-            <span className="font-mono text-xs uppercase tracking-[0.16em] text-ember">
+            <span className="font-mono text-xs uppercase tracking-[0.16em] text-gold">
               Как добраться
             </span>
-            <h2 className="mb-6 mt-2.5 text-3xl font-bold text-char sm:text-4xl">
+            <h2 className="mb-6 mt-2.5 text-3xl font-bold text-parchment-light sm:text-4xl">
               Площадь Мира, 2а/1
             </h2>
             <table className="w-full border-collapse">
               <tbody>
-                <tr className="border-b border-ink/10">
-                  <td className="py-3 text-sm text-ink/60">Ежедневно</td>
-                  <td className="py-3 text-right font-mono text-sm font-bold text-char">
+                <tr className="border-b border-parchment/10">
+                  <td className="py-3 text-sm text-parchment/60">Ежедневно</td>
+                  <td className="py-3 text-right font-mono text-sm font-bold text-parchment-light">
                     11:00 – 24:00
                   </td>
                 </tr>
-                <tr className="border-b border-ink/10">
-                  <td className="py-3 text-sm text-ink/60">Район</td>
-                  <td className="py-3 text-right font-mono text-sm font-bold text-char">
+                <tr className="border-b border-parchment/10">
+                  <td className="py-3 text-sm text-parchment/60">Район</td>
+                  <td className="py-3 text-right font-mono text-sm font-bold text-parchment-light">
                     Центральный, Красноярск
                   </td>
                 </tr>
@@ -413,32 +413,32 @@ export default function HomePage() {
 
             <ul className="mt-6 flex flex-col gap-3.5">
               <li className="flex items-baseline gap-3.5 text-sm">
-                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-river">
+                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-ash">
                   Телефон
                 </span>
                 <a
                   href="tel:+79235700588"
-                  className="border-b border-ink/25 font-bold text-char"
+                  className="border-b border-parchment/25 font-bold text-parchment-light"
                 >
                   +7 923 570-05-88
                 </a>
               </li>
               <li className="flex items-baseline gap-3.5 text-sm">
-                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-river">
+                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-ash">
                   Телефон
                 </span>
                 <a
                   href="tel:+73912314515"
-                  className="border-b border-ink/25 font-bold text-char"
+                  className="border-b border-parchment/25 font-bold text-parchment-light"
                 >
                   +7 (391) 231-45-15
                 </a>
               </li>
               <li className="flex items-baseline gap-3.5 text-sm">
-                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-river">
+                <span className="w-24 shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-ash">
                   Адрес
                 </span>
-                <span className="text-char">
+                <span className="text-parchment-light">
                   660049, Красноярск, Площадь Мира, 2а/1
                 </span>
               </li>
