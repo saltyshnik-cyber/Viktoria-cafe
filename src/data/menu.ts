@@ -1,5 +1,4 @@
 import type { MenuCategory } from "@/types/menu";
-import { getMenuItemsByCategory } from "@/lib/menu-store";
 
 export const categories: MenuCategory[] = [
   { id: "shashlik", name: "Шашлыки", emoji: "🍢" },
@@ -9,5 +8,3 @@ export const categories: MenuCategory[] = [
   { id: "extra", name: "Дополнительно", emoji: "🫔" },
   { id: "khachapuri", name: "Хачапури", emoji: "🫓" },
 ];
-
-export const getItemsByCategory = getMenuItemsByCategory;

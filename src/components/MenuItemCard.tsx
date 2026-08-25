@@ -9,49 +9,51 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
   const quantity = getQuantity(item.id);
 
   return (
-    <div className="flex flex-col rounded-xl2 border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md">
-      <div className="mb-3 flex h-32 items-center justify-center rounded-xl bg-cream text-4xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-black/5 bg-white transition hover:shadow-md">
+      <div className="flex aspect-square w-full shrink-0 items-center justify-center bg-cream text-3xl">
         🍽️
       </div>
 
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-ink">{item.name}</h3>
-        {item.isPopular && (
-          <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-            Хит
-          </span>
-        )}
-      </div>
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 text-sm font-semibold text-ink">{item.name}</h3>
+          {item.isPopular && (
+            <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+              Хит
+            </span>
+          )}
+        </div>
 
-      <p className="mt-1 flex-1 text-sm text-ink/60">{item.description}</p>
+        <p className="line-clamp-2 text-xs text-ink/60">{item.description}</p>
 
-      <div className="mt-3 flex items-center">
-        {item.weight && <div className="text-sm text-ink/50">{item.weight}</div>}
-        <div className="ml-auto font-semibold text-ink">{item.price} ₽</div>
-      </div>
+        <div className="mt-auto flex items-center pt-2">
+          {item.weight && <span className="text-xs text-ink/50">{item.weight}</span>}
+          <span className="ml-auto font-semibold text-ink">{item.price} ₽</span>
+        </div>
 
-      <div className="mt-3">
-        {quantity === 0 ? (
-          <button
-            type="button"
-            onClick={() =>
-              addItem({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                weight: item.weight,
-              })
-            }
-            className="w-full rounded-full bg-primary/10 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-cream"
-          >
-            В корзину
-          </button>
-        ) : (
-          <QuantityStepper
-            quantity={quantity}
-            onChange={(next) => setQuantity(item.id, next)}
-          />
-        )}
+        <div className="mt-2">
+          {quantity === 0 ? (
+            <button
+              type="button"
+              onClick={() =>
+                addItem({
+                  id: item.id,
+                  name: item.name,
+                  price: item.price,
+                  weight: item.weight,
+                })
+              }
+              className="w-full rounded-full bg-primary/10 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary hover:text-cream"
+            >
+              В корзину
+            </button>
+          ) : (
+            <QuantityStepper
+              quantity={quantity}
+              onChange={(next) => setQuantity(item.id, next)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

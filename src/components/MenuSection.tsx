@@ -9,15 +9,17 @@ export default function MenuSection({
   items: MenuItem[];
 }) {
   return (
-    <section id={category.id} className="scroll-mt-32 py-8">
+    <section id={category.id} className="min-w-0 scroll-mt-32 py-8">
       <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-ink">
         <span>{category.emoji}</span>
         {category.name}
       </h2>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-nowrap snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
         {items.map((item) => (
-          <MenuItemCard key={item.id} item={item} />
+          <div key={item.id} className="w-44 shrink-0 snap-start sm:w-auto">
+            <MenuItemCard item={item} />
+          </div>
         ))}
       </div>
     </section>
