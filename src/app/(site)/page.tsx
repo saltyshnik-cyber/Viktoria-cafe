@@ -1,8 +1,74 @@
 import Link from "next/link";
 import Embers from "@/components/Embers";
+import ScrollCarousel from "@/components/ScrollCarousel";
 
 const MAPS_URL =
   "https://2gis.ru/krasnoyarsk/geo/70000001026596217/92.896586,56.011237";
+
+const dishes = [
+  {
+    image: "/images/dish-assorti.jpg",
+    alt: "Ассорти шашлыка на углях",
+    tag: "С мангала",
+    name: "Шашлычное ассорти",
+    description:
+      "Свинина, рёбра и мясо на кости — с углей, с печёным картофелем и соусами.",
+  },
+  {
+    image: "/images/dish-lyulya.jpg",
+    alt: "Люля-кебаб на шпажках",
+    tag: "С мангала",
+    name: "Люля-кебаб",
+    description:
+      "Сочный рубленый шашлык, подаётся с маринованным красным луком и соусом.",
+  },
+  {
+    image: "/images/dish-khachapuri.jpg",
+    alt: "Хачапури по-аджарски и по-имеретински",
+    tag: "Из печи",
+    name: "Хачапури",
+    description:
+      "По-имеретински — с сыром внутри, и по-аджарски — лодочкой, с яйцом сверху.",
+  },
+  {
+    image: "/images/dish-vegetables.jpg",
+    alt: "Овощи гриль на деревянной доске",
+    tag: "С мангала",
+    name: "Овощи на гриле",
+    description:
+      "Баклажан, кабачок, шампиньоны, помидор и перец — с чесночным соусом.",
+  },
+  {
+    image: "/images/dish-cabbage-salad.jpg",
+    alt: "Салат из краснокочанной капусты и овощей",
+    tag: "Салаты",
+    name: "Капустный салат",
+    description:
+      "Краснокочанная капуста, огурец, помидор и зелень — лёгкая заправка.",
+  },
+  {
+    image: "/images/dish-cheese-salad.jpg",
+    alt: "Салат с сыром и черри",
+    tag: "Салаты",
+    name: "Салат с сыром",
+    description:
+      "Листья салата, тёртый сыр, черри и соус — классика к любому блюду.",
+  },
+  {
+    image: "/images/dish-veg-plate.jpg",
+    alt: "Овощная тарелка с сыром сулугуни",
+    tag: "Закуски",
+    name: "Овощная тарелка",
+    description: "Огурец, помидор, зелень и сыр — свежая закуска к столу.",
+  },
+];
+
+const galleryPhotos = [
+  { image: "/images/gallery-1.jpg", alt: "Терраса с коваными грилями над рекой" },
+  { image: "/images/gallery-2.jpg", alt: "Столик у окна с видом на Енисей" },
+  { image: "/images/gallery-3.jpg", alt: "Зал с диванами и панорамными окнами" },
+  { image: "/images/gallery-4.jpg", alt: "Фасад кафе Виктория вечером" },
+];
 
 const reviews = [
   {
@@ -48,9 +114,21 @@ export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-char py-24 sm:py-32">
+      <section className="relative flex min-h-[100svh] items-start overflow-hidden bg-char">
+        <img
+          src="/images/hero.jpg"
+          alt="Кафе Виктория вечером, набережная Енисея"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(18,13,10,0.4) 0%, rgba(16,12,9,0.58) 22%, rgba(15,11,9,0.72) 50%, rgba(13,10,8,0.9) 100%)",
+          }}
+        />
         <Embers count={16} />
-        <div className="relative z-10 mx-auto max-w-6xl px-4">
+        <div className="relative z-10 mx-auto max-w-6xl px-4 pb-14 pt-36 sm:pb-16 sm:pt-48">
           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-gold">
             <span className="h-px w-6 bg-gold" />
             Кафе на Площади Мира · Красноярск
@@ -151,6 +229,85 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Menu preview */}
+      <section id="menu-preview" className="relative overflow-hidden bg-char py-20 sm:py-24">
+        <Embers count={16} />
+        <div className="relative z-10 mx-auto max-w-6xl px-4">
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <span className="font-mono text-xs uppercase tracking-[0.16em] text-gold">
+                Меню
+              </span>
+              <h2 className="mt-2.5 text-3xl font-bold text-parchment-light sm:text-4xl">
+                С мангала и из тандыра
+              </h2>
+            </div>
+            <p className="max-w-xs text-sm leading-relaxed text-parchment/60">
+              Полное меню с ценами — у официанта в зале и на террасе. Здесь —
+              фирменные позиции, за которые гости чаще всего хвалят «Викторию».
+            </p>
+          </div>
+
+          <ScrollCarousel ariaLabel="блюдо">
+            {dishes.map((dish) => (
+              <article
+                key={dish.name}
+                className="flex w-[300px] shrink-0 snap-start flex-col overflow-hidden border border-gold/25 bg-warm-light"
+              >
+                <div className="h-56 overflow-hidden">
+                  <img
+                    src={dish.image}
+                    alt={dish.alt}
+                    className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 p-5">
+                  <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ember">
+                    {dish.tag}
+                  </span>
+                  <h3 className="text-lg font-bold text-char">{dish.name}</h3>
+                  <p className="text-sm leading-relaxed text-ink/70">
+                    {dish.description}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </ScrollCarousel>
+
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/menu"
+              className="inline-flex items-center gap-2 rounded-sm bg-ember px-6 py-3.5 text-sm font-bold text-parchment-light transition hover:-translate-y-0.5 hover:bg-ember-light"
+            >
+              Посмотреть всё меню
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section className="bg-warm py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <span className="font-mono text-xs uppercase tracking-[0.16em] text-ember">
+            Атмосфера
+          </span>
+          <h2 className="mb-10 mt-2.5 text-3xl font-bold text-char sm:text-4xl">
+            Зал, терраса, вид на реку
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-4">
+          {galleryPhotos.map((photo) => (
+            <div key={photo.image} className="aspect-[4/5] overflow-hidden">
+              <img
+                src={photo.image}
+                alt={photo.alt}
+                className="h-full w-full object-cover transition duration-500 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Reviews */}
       <section id="otzyvy" className="relative overflow-hidden bg-char py-20 sm:py-24">
         <Embers count={16} />
@@ -182,11 +339,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ScrollCarousel ariaLabel="отзыв">
             {reviews.map((review) => (
               <article
                 key={review.name}
-                className="flex flex-col gap-4 border border-parchment/15 bg-parchment/5 p-7"
+                className="flex w-80 shrink-0 snap-start flex-col gap-4 border border-parchment/15 bg-parchment/5 p-7"
               >
                 <div className="flex items-center gap-3.5">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-river font-serif text-lg font-bold text-parchment-light">
@@ -212,7 +369,7 @@ export default function HomePage() {
                 </p>
               </article>
             ))}
-          </div>
+          </ScrollCarousel>
 
           <div className="mt-10 flex justify-center">
             <a
