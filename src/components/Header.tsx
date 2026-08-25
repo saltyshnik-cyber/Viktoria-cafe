@@ -1,39 +1,36 @@
 import Link from "next/link";
-import { categories } from "@/data/menu";
 import CartIndicator from "@/components/CartIndicator";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-cream/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-lg font-bold text-cream">
-            В
-          </span>
-          <span className="text-lg font-bold text-ink">Виктория</span>
+    <header className="sticky top-0 z-40 border-b border-gold/10 bg-char/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+        <Link
+          href="/"
+          className="font-serif text-xl font-extrabold tracking-tight text-parchment-light"
+        >
+          Виктория<span className="text-gold">.</span>
         </Link>
 
-        <a
-          href="tel:+70000000000"
-          className="hidden text-sm font-medium text-ink/80 hover:text-primary sm:block"
-        >
-          +7 (000) 000-00-00
-        </a>
+        <nav className="flex items-center gap-5 text-sm font-semibold text-parchment/85 sm:gap-7">
+          <Link href="/" className="hidden transition hover:text-gold sm:inline">
+            Главная
+          </Link>
+          <Link href="/menu" className="transition hover:text-gold">
+            Меню
+          </Link>
+        </nav>
 
-        <CartIndicator />
-      </div>
-
-      <nav className="scrollbar-none mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 text-sm">
-        {categories.map((category) => (
+        <div className="flex items-center gap-4">
           <a
-            key={category.id}
-            href={`#${category.id}`}
-            className="shrink-0 rounded-full border border-black/10 px-3 py-1.5 text-ink/70 transition hover:border-primary hover:text-primary"
+            href="tel:+79235700588"
+            className="hidden text-sm font-medium text-parchment/80 hover:text-gold sm:block"
           >
-            {category.emoji} {category.name}
+            +7 923 570-05-88
           </a>
-        ))}
-      </nav>
+          <CartIndicator />
+        </div>
+      </div>
     </header>
   );
 }

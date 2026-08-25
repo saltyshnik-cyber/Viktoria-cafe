@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Manrope, Bitter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -7,10 +7,22 @@ const manrope = Manrope({
   variable: "--font-manrope",
 });
 
+const bitter = Bitter({
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-bitter",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500"],
+  variable: "--font-jetbrains-mono",
+});
+
 export const metadata: Metadata = {
-  title: "Кафе «Виктория» — доставка еды",
+  title: "Виктория — кафе на Площади Мира, Красноярск",
   description:
-    "Кафе «Виктория»: домашняя кухня с доставкой. Супы, салаты, горячие блюда, пицца, бургеры и десерты с доставкой на дом.",
+    "Кафе «Виктория» на Площади Мира, 2а/1 в Красноярске. Шашлык, хачапури, грузинская кухня, терраса с видом на Енисей. Ежедневно 11:00–24:00.",
 };
 
 export default function RootLayout({
@@ -19,7 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={manrope.variable}>
+    <html
+      lang="ru"
+      className={`${manrope.variable} ${bitter.variable} ${jetbrainsMono.variable}`}
+    >
       <body className="flex min-h-screen flex-col font-sans">{children}</body>
     </html>
   );

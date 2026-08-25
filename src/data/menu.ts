@@ -2,13 +2,12 @@ import type { MenuCategory } from "@/types/menu";
 import { getMenuItemsByCategory } from "@/lib/menu-store";
 
 export const categories: MenuCategory[] = [
-  { id: "soups", name: "Супы", emoji: "🍲" },
-  { id: "salads", name: "Салаты", emoji: "🥗" },
-  { id: "hot", name: "Горячие блюда", emoji: "🍽️" },
-  { id: "pizza", name: "Пицца", emoji: "🍕" },
-  { id: "burgers", name: "Бургеры", emoji: "🍔" },
+  { id: "shashlik", name: "Шашлыки", emoji: "🍢" },
+  { id: "garnish", name: "Гарниры", emoji: "🥔" },
+  { id: "salads", name: "Салаты и закуски", emoji: "🥗" },
   { id: "drinks", name: "Напитки", emoji: "🥤" },
-  { id: "desserts", name: "Десерты", emoji: "🍰" },
+  { id: "extra", name: "Дополнительно", emoji: "🫔" },
+  { id: "khachapuri", name: "Хачапури", emoji: "🫓" },
 ];
 
 export const getItemsByCategory = getMenuItemsByCategory;

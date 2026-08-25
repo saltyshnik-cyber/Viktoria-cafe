@@ -25,9 +25,9 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
 
       <p className="mt-1 flex-1 text-sm text-ink/60">{item.description}</p>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="text-sm text-ink/50">{item.weight}</div>
-        <div className="font-semibold text-ink">{item.price} ₽</div>
+      <div className="mt-3 flex items-center">
+        {item.weight && <div className="text-sm text-ink/50">{item.weight}</div>}
+        <div className="ml-auto font-semibold text-ink">{item.price} ₽</div>
       </div>
 
       <div className="mt-3">

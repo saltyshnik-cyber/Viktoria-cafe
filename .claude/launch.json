@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "victoria-cafe",
-      "runtimeExecutable": "C:\\Users\\ПК\\Documents\\кафе виктория\\dev-server.cmd",
+      "runtimeExecutable": "C:\\Users\\yaego\\Viktoria-cafe\\dev-server.cmd",
       "runtimeArgs": [],
       "port": 3000
     }

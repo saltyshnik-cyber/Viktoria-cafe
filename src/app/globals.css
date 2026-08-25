@@ -6,3 +6,44 @@ body {
   background-color: #fff8f0;
   color: #2b1b12;
 }
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@keyframes ember-rise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(var(--drift, 20px), -420px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.ember-particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 9999px;
+  animation-name: ember-rise;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ember-particle {
+    animation: none;
+    display: none;
+  }
+}
