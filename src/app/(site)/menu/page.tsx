@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { categories } from "@/data/menu";
 import { getAllMenuItems } from "@/lib/menu-store";
 import MenuSection from "@/components/MenuSection";
@@ -13,13 +14,19 @@ export default async function MenuPage() {
   const items = await getAllMenuItems();
 
   return (
-    <>
-      <section className="bg-primary/5">
+    <div className="min-h-screen bg-char">
+      <section className="bg-char">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <h1 className="max-w-xl text-3xl font-bold text-ink sm:text-4xl">
+          <Link
+            href="/"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-parchment/70 transition hover:text-gold"
+          >
+            ← Назад на главную
+          </Link>
+          <h1 className="max-w-xl text-3xl font-bold text-parchment-light sm:text-4xl">
             Меню кафе «Виктория»
           </h1>
-          <p className="mt-3 max-w-lg text-ink/70">
+          <p className="mt-3 max-w-lg text-parchment/70">
             Шашлык, хачапури и грузинская кухня на углях. Готовим каждый день —
             с 11:00 до полуночи.
           </p>
@@ -28,7 +35,7 @@ export default async function MenuPage() {
 
       <CategoryNav />
 
-      <div className="mx-auto max-w-6xl divide-y divide-black/5 px-4">
+      <div className="mx-auto max-w-6xl divide-y divide-parchment/10 px-4 pb-12">
         {categories.map((category) => (
           <MenuSection
             key={category.id}
@@ -37,6 +44,6 @@ export default async function MenuPage() {
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }

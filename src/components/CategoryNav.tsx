@@ -48,7 +48,7 @@ export default function CategoryNav() {
   }, []);
 
   return (
-    <nav className="scrollbar-none sticky top-16 z-30 mx-auto flex max-w-6xl gap-2 overflow-x-auto border-b border-black/5 bg-cream/95 px-4 py-3 backdrop-blur">
+    <nav className="scrollbar-none sticky top-16 z-30 mx-auto flex max-w-6xl gap-2 overflow-x-auto border-b border-gold/10 bg-char/95 px-4 py-3 backdrop-blur">
       {categories.map((category) => {
         const isActive = active === category.id;
         return (
@@ -57,8 +57,8 @@ export default function CategoryNav() {
             href={`#${category.id}`}
             className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition ${
               isActive
-                ? "border-primary bg-primary text-cream"
-                : "border-black/10 text-ink/70 hover:border-primary hover:text-primary"
+                ? "border-ember bg-ember text-parchment-light"
+                : "border-parchment/15 text-parchment/70 hover:border-gold hover:text-gold"
             }`}
           >
             {category.emoji} {category.name}

@@ -9,16 +9,16 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
   const quantity = getQuantity(item.id);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-black/5 bg-white transition hover:shadow-md">
-      <div className="flex aspect-square w-full shrink-0 items-center justify-center bg-cream text-3xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gold/20 bg-parchment-light transition hover:shadow-lg hover:shadow-black/30">
+      <div className="flex aspect-square w-full shrink-0 items-center justify-center bg-warm text-3xl">
         🍽️
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-sm font-semibold text-ink">{item.name}</h3>
+          <h3 className="line-clamp-2 text-sm font-semibold text-char">{item.name}</h3>
           {item.isPopular && (
-            <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+            <span className="shrink-0 rounded-full bg-ember/15 px-1.5 py-0.5 text-[10px] font-medium text-ember">
               Хит
             </span>
           )}
@@ -28,7 +28,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
 
         <div className="mt-auto flex items-center pt-2">
           {item.weight && <span className="text-xs text-ink/50">{item.weight}</span>}
-          <span className="ml-auto font-semibold text-ink">{item.price} ₽</span>
+          <span className="ml-auto font-semibold text-char">{item.price} ₽</span>
         </div>
 
         <div className="mt-2">
@@ -43,7 +43,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
                   weight: item.weight,
                 })
               }
-              className="w-full rounded-full bg-primary/10 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary hover:text-cream"
+              className="w-full rounded-full bg-ember py-1.5 text-xs font-semibold text-parchment-light transition hover:bg-ember-light"
             >
               В корзину
             </button>

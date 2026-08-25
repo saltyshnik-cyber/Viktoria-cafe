@@ -8,7 +8,7 @@ export default function QuantityStepper({
   onChange: (quantity: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-full bg-primary text-cream">
+    <div className="flex items-center justify-between gap-2 rounded-full bg-ember text-parchment-light">
       <button
         type="button"
         aria-label="Уменьшить количество"

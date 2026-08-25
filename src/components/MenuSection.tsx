@@ -10,7 +10,7 @@ export default function MenuSection({
 }) {
   return (
     <section id={category.id} className="min-w-0 scroll-mt-32 py-8">
-      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-ink">
+      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-parchment-light">
         <span>{category.emoji}</span>
         {category.name}
       </h2>
