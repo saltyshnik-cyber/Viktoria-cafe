@@ -207,7 +207,7 @@ export default async function HomePage() {
             {dishes.map((dish) => (
               <article
                 key={dish.name}
-                className="flex w-[300px] shrink-0 snap-start flex-col overflow-hidden border border-gold/25 bg-warm-light"
+                className="flex w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-gold/20 bg-parchment-light transition hover:shadow-lg hover:shadow-black/30"
               >
                 <div className="h-56 overflow-hidden">
                   <img
