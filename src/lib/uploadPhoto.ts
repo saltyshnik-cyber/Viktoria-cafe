@@ -1,22 +1,37 @@
-import { upload } from "@vercel/blob/client";
-
 /**
- * Загружает файл напрямую из браузера в Vercel Blob.
+ * Загружает файл на сервер, который сохраняет его в Vercel Blob.
  *
- * Через наш серверный роут (`/api/admin/upload`) проходит только небольшой
- * запрос "дай токен" — сами байты файла уходят прямиком в Blob-хранилище,
- * минуя ограничение Vercel на размер тела serverless-функции.
+ * Раньше здесь использовался клиентский `upload()` из `@vercel/blob/client`
+ * (прямая загрузка из браузера в Blob), но он натыкается на известный баг
+ * SDK: браузер обращается к vercel.com/api/blob/... и получает отказ
+ * из-за отсутствия CORS-заголовков (не чинится на стороне приложения).
+ * Поэтому файл идёт через наш собственный роут — для фото ресторана
+ * (обычно не больше нескольких МБ) это не проблема.
  */
 export async function uploadPhoto(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
   try {
-    const blob = await upload(file.name, file, {
-      access: "public",
-      handleUploadUrl: "/api/admin/upload",
-      contentType: file.type || "application/octet-stream",
+    response = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: formData,
     });
-    return blob.url;
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    throw new Error(`Не удалось загрузить фото: ${detail}`);
+    throw new Error(`Нет соединения с сервером (${detail})`);
   }
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error ?? `Не удалось загрузить фото (код ${response.status})`);
+  }
+
+  if (!data?.url) {
+    throw new Error("Сервер вернул некорректный ответ при загрузке фото");
+  }
+
+  return data.url as string;
 }

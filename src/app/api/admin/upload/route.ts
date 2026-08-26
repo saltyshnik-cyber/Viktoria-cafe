@@ -1,22 +1,40 @@
 import { NextResponse } from "next/server";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { put } from "@vercel/blob";
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as HandleUploadBody;
+  const formData = await request.formData();
+  const file = formData.get("file");
+
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "Файл не передан" }, { status: 400 });
+  }
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: "Разрешены только изображения (JPEG, PNG, WebP, GIF)" },
+      { status: 400 },
+    );
+  }
+
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json(
+      { error: "Файл слишком большой (максимум 10 МБ)" },
+      { status: 400 },
+    );
+  }
 
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
-        addRandomSuffix: true,
-        maximumSizeInBytes: 10 * 1024 * 1024,
-      }),
+    const blob = await put(file.name, file, {
+      access: "public",
+      addRandomSuffix: true,
+      contentType: file.type,
     });
-    return NextResponse.json(jsonResponse);
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Неизвестная ошибка загрузки";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
