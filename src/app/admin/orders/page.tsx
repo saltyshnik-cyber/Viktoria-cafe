@@ -1,6 +1,5 @@
 import { getAllOrders } from "@/lib/orders";
 import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
-import AdminNav from "@/components/admin/AdminNav";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +9,7 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <AdminNav />
-      <h1 className="mt-6 text-2xl font-bold text-ink">Заказы</h1>
+      <h1 className="text-2xl font-bold text-ink">Заказы</h1>
 
       {orders.length === 0 ? (
         <p className="mt-6 text-ink/60">Заказов пока нет.</p>
