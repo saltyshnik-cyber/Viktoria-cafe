@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 10 * 1024 * 1024;
+// Serverless-функции Vercel режут тело запроса примерно на 4.5 МБ ещё до
+// того, как выполнится этот код (тогда браузер получает 413 без единой
+// строчки нашего JSON) — держим лимит чуть ниже этого потолка, чтобы хотя
+// бы для файлов, которые всё же долетели, отдать понятное сообщение.
+const MAX_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -21,8 +25,8 @@ export async function POST(request: Request) {
 
   if (file.size > MAX_BYTES) {
     return NextResponse.json(
-      { error: "Файл слишком большой (максимум 10 МБ)" },
-      { status: 400 },
+      { error: "Файл слишком большой. Попробуйте выбрать фото поменьше." },
+      { status: 413 },
     );
   }
 
