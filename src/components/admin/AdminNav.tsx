@@ -14,15 +14,15 @@ export default function AdminNav() {
   }
 
   const linkClass = (href: string) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition ${
+    `shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
       pathname === href
         ? "bg-primary text-cream"
         : "text-ink/60 hover:text-primary"
     }`;
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
-      <div className="flex flex-wrap gap-2">
+    <nav className="flex items-center gap-4 border-b border-black/10 pb-4">
+      <div className="scrollbar-none flex min-w-0 gap-2 overflow-x-auto">
         <Link href="/admin/orders" className={linkClass("/admin/orders")}>
           Заказы
         </Link>
@@ -45,7 +45,7 @@ export default function AdminNav() {
       <button
         type="button"
         onClick={handleLogout}
-        className="text-sm text-ink/50 hover:text-primary"
+        className="shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream transition hover:bg-black"
       >
         Выйти
       </button>

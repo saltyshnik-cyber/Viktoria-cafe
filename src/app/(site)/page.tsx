@@ -249,17 +249,21 @@ export default async function HomePage() {
           <h2 className="mb-10 mt-2.5 text-3xl font-bold text-parchment-light sm:text-4xl">
             {settings.atmosphereTitle}
           </h2>
-        </div>
-        <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-4">
-          {settings.galleryImages.map((src, i) => (
-            <div key={src + i} className="aspect-[4/5] overflow-hidden">
-              <img
-                src={src}
-                alt={`${settings.atmosphereTitle} — фото ${i + 1}`}
-                className="h-full w-full object-cover transition duration-500 hover:scale-105"
-              />
-            </div>
-          ))}
+
+          <ScrollCarousel ariaLabel="фото атмосферы">
+            {settings.galleryImages.map((src, i) => (
+              <div
+                key={src + i}
+                className="aspect-[4/5] w-64 shrink-0 snap-start overflow-hidden sm:w-72"
+              >
+                <img
+                  src={src}
+                  alt={`${settings.atmosphereTitle} — фото ${i + 1}`}
+                  className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                />
+              </div>
+            ))}
+          </ScrollCarousel>
         </div>
       </section>
 
