@@ -26,7 +26,7 @@ export default function AdminNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-cream/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link
           href="/"
           className="shrink-0 text-sm font-semibold text-ink/70 transition hover:text-primary"
@@ -34,9 +34,17 @@ export default function AdminNav() {
           ← На сайт
         </Link>
 
-        <div className="h-5 w-px shrink-0 bg-black/10" />
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream transition hover:bg-black"
+        >
+          Выйти
+        </button>
+      </div>
 
-        <div className="scrollbar-none flex min-w-0 flex-1 gap-2 overflow-x-auto">
+      <div className="mx-auto max-w-6xl px-4">
+        <nav className="scrollbar-none flex gap-2 overflow-x-auto border-t border-black/10 py-3">
           {LINKS.map((link) => (
             <Link
               key={link.href}
@@ -50,15 +58,7 @@ export default function AdminNav() {
               {link.label}
             </Link>
           ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cream transition hover:bg-black"
-        >
-          Выйти
-        </button>
+        </nav>
       </div>
     </header>
   );
