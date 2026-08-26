@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { categories } from "@/data/menu";
+import type { MenuCategory } from "@/types/menu";
 
 const STICKY_OFFSET = 130;
 
-export default function CategoryNav() {
+export default function CategoryNav({ categories }: { categories: MenuCategory[] }) {
   const [active, setActive] = useState<string>(categories[0]?.id ?? "");
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function CategoryNav() {
     updateActive();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [categories]);
 
   return (
     <nav className="scrollbar-none sticky top-16 z-30 mx-auto flex max-w-6xl gap-2 overflow-x-auto border-b border-gold/10 bg-char/95 px-4 py-3 backdrop-blur">

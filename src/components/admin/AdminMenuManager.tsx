@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MenuCategory, MenuItem } from "@/types/menu";
+import { uploadPhoto } from "@/lib/uploadPhoto";
 
 type ItemFormState = {
   categoryId: string;
@@ -10,6 +11,8 @@ type ItemFormState = {
   weight: string;
   price: string;
   isPopular: boolean;
+  photoUrl: string;
+  isAvailable: boolean;
 };
 
 function emptyForm(categories: MenuCategory[]): ItemFormState {
@@ -20,6 +23,8 @@ function emptyForm(categories: MenuCategory[]): ItemFormState {
     weight: "",
     price: "",
     isPopular: false,
+    photoUrl: "",
+    isAvailable: true,
   };
 }
 
@@ -31,7 +36,62 @@ function itemToForm(item: MenuItem): ItemFormState {
     weight: item.weight,
     price: String(item.price),
     isPopular: Boolean(item.isPopular),
+    photoUrl: item.photoUrl ?? "",
+    isAvailable: item.isAvailable ?? true,
   };
+}
+
+function PhotoPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadPhoto(file);
+      onChange(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось загрузить фото");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 sm:col-span-2">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-cream text-2xl">
+        {value ? (
+          <img src={value} alt="" className="h-full w-full object-cover" />
+        ) : (
+          "🍽️"
+        )}
+      </div>
+      <div>
+        <label className="inline-block cursor-pointer rounded-full border border-black/10 px-3 py-1.5 text-sm text-ink/70 hover:border-primary hover:text-primary">
+          {uploading ? "Загрузка…" : value ? "Заменить фото" : "Загрузить фото"}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploading}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      </div>
+    </div>
+  );
 }
 
 function ItemForm({
@@ -45,6 +105,10 @@ function ItemForm({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
+      <PhotoPicker
+        value={value.photoUrl}
+        onChange={(photoUrl) => onChange({ ...value, photoUrl })}
+      />
       <input
         value={value.name}
         onChange={(e) => onChange({ ...value, name: e.target.value })}
@@ -82,13 +146,21 @@ function ItemForm({
         placeholder="Цена, ₽"
         className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
       />
-      <label className="flex items-center gap-2 text-sm text-ink/70 sm:col-span-2">
+      <label className="flex items-center gap-2 text-sm text-ink/70">
         <input
           type="checkbox"
           checked={value.isPopular}
           onChange={(e) => onChange({ ...value, isPopular: e.target.checked })}
         />
         Хит меню
+      </label>
+      <label className="flex items-center gap-2 text-sm text-ink/70">
+        <input
+          type="checkbox"
+          checked={!value.isAvailable}
+          onChange={(e) => onChange({ ...value, isAvailable: !e.target.checked })}
+        />
+        Скрыть (временно закончилось)
       </label>
     </div>
   );
@@ -117,6 +189,8 @@ export default function AdminMenuManager({
       weight: form.weight.trim(),
       price: Number(form.price),
       isPopular: form.isPopular,
+      photoUrl: form.photoUrl,
+      isAvailable: form.isAvailable,
     };
   }
 
@@ -258,20 +332,38 @@ export default function AdminMenuManager({
                     </div>
                   ) : (
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 font-semibold text-ink">
-                          {item.name}
-                          {item.isPopular && (
-                            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                              Хит
-                            </span>
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-cream text-2xl">
+                          {item.photoUrl ? (
+                            <img
+                              src={item.photoUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            "🍽️"
                           )}
                         </div>
-                        <div className="mt-0.5 text-sm text-ink/60">
-                          {item.description}
-                        </div>
-                        <div className="mt-1 text-sm text-ink/50">
-                          {item.weight} · {item.price} ₽
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 font-semibold text-ink">
+                            {item.name}
+                            {item.isPopular && (
+                              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                                Хит
+                              </span>
+                            )}
+                            {item.isAvailable === false && (
+                              <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-medium text-ink/60">
+                                Скрыто
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-sm text-ink/60">
+                            {item.description}
+                          </div>
+                          <div className="mt-1 text-sm text-ink/50">
+                            {item.weight} · {item.price} ₽
+                          </div>
                         </div>
                       </div>
 

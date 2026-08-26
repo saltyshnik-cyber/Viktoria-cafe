@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { categories } from "@/data/menu";
+import { getCategories } from "@/lib/categories";
 import { getAllMenuItems } from "@/lib/menu-store";
 import MenuSection from "@/components/MenuSection";
 import CategoryNav from "@/components/CategoryNav";
@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function MenuPage() {
-  const items = await getAllMenuItems();
+  const [items, categories] = await Promise.all([getAllMenuItems(), getCategories()]);
 
   return (
     <div className="min-h-screen bg-char">
@@ -33,7 +33,7 @@ export default async function MenuPage() {
         </div>
       </section>
 
-      <CategoryNav />
+      <CategoryNav categories={categories} />
 
       <div className="mx-auto max-w-6xl divide-y divide-parchment/10 px-4 pb-12">
         {categories.map((category) => (

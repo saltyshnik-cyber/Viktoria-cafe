@@ -1,12 +1,15 @@
-import { categories } from "@/data/menu";
-import { getAllMenuItems } from "@/lib/menu-store";
+import { getCategories } from "@/lib/categories";
+import { getAllMenuItemsAdmin } from "@/lib/menu-store";
 import AdminNav from "@/components/admin/AdminNav";
 import AdminMenuManager from "@/components/admin/AdminMenuManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMenuPage() {
-  const items = await getAllMenuItems();
+  const [items, categories] = await Promise.all([
+    getAllMenuItemsAdmin(),
+    getCategories(),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">

@@ -21,13 +21,25 @@ export default function AdminNav() {
     }`;
 
   return (
-    <nav className="flex items-center justify-between gap-4 border-b border-black/10 pb-4">
-      <div className="flex gap-2">
+    <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
+      <div className="flex flex-wrap gap-2">
         <Link href="/admin/orders" className={linkClass("/admin/orders")}>
           Заказы
         </Link>
         <Link href="/admin/menu" className={linkClass("/admin/menu")}>
           Меню
+        </Link>
+        <Link href="/admin/categories" className={linkClass("/admin/categories")}>
+          Категории
+        </Link>
+        <Link href="/admin/homepage" className={linkClass("/admin/homepage")}>
+          Главная
+        </Link>
+        <Link href="/admin/contacts" className={linkClass("/admin/contacts")}>
+          Контакты
+        </Link>
+        <Link href="/admin/delivery" className={linkClass("/admin/delivery")}>
+          Доставка
         </Link>
       </div>
       <button

@@ -10,8 +10,16 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gold/20 bg-parchment-light transition hover:shadow-lg hover:shadow-black/30">
-      <div className="flex aspect-square w-full shrink-0 items-center justify-center bg-warm text-3xl">
-        🍽️
+      <div className="flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-warm text-3xl">
+        {item.photoUrl ? (
+          <img
+            src={item.photoUrl}
+            alt={item.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          "🍽️"
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">

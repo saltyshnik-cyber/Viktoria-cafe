@@ -24,6 +24,8 @@ export async function POST(request: Request) {
       weight: body.weight ?? "",
       price: body.price,
       isPopular: Boolean(body.isPopular),
+      photoUrl: body.photoUrl ?? "",
+      isAvailable: body.isAvailable ?? true,
     });
 
     return NextResponse.json({ item });

@@ -28,6 +28,8 @@ export async function PATCH(
       weight: body.weight ?? "",
       price: body.price,
       isPopular: Boolean(body.isPopular),
+      photoUrl: body.photoUrl ?? "",
+      isAvailable: body.isAvailable ?? true,
     });
 
     if (!item) {

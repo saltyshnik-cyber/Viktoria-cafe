@@ -12,4 +12,6 @@ export type MenuItem = {
   weight: string;
   price: number;
   isPopular?: boolean;
+  photoUrl?: string;
+  isAvailable?: boolean;
 };

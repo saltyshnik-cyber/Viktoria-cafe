@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import CartIndicator from "@/components/CartIndicator";
+import { phoneToTelHref } from "@/lib/phone";
 
-export default function Header() {
+export default function Header({ phone }: { phone: string }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -38,10 +39,10 @@ export default function Header() {
 
             <div className="flex items-center gap-4">
               <a
-                href="tel:+79235700588"
+                href={phoneToTelHref(phone)}
                 className="hidden text-sm font-medium text-parchment/80 hover:text-gold sm:block"
               >
-                +7 923 570-05-88
+                {phone}
               </a>
               <CartIndicator />
             </div>
