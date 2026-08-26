@@ -12,6 +12,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Временные диагностические роуты — сравнивают, что видит Edge Runtime
+  // (proxy.ts выполняется здесь же) и что видит обычная Node.js-функция.
+  // Удалить вместе с самими роутами после диагностики.
+  if (
+    pathname === "/api/admin/diag-edge-8f3a1c9e77" ||
+    pathname === "/api/admin/diag-node-8f3a1c9e77"
+  ) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   const valid = await isValidSessionToken(token);
 
