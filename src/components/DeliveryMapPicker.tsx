@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { loadYandexMaps } from "@/lib/yandexMapsLoader";
 
 // Центр Красноярска — стартовая точка, пока клиент не передвинул метку.
@@ -12,13 +12,18 @@ export type DeliveryLocation = {
   address: string;
 };
 
-export default function DeliveryMapPicker({
-  value,
-  onChange,
-}: {
-  value: DeliveryLocation | null;
-  onChange: (next: DeliveryLocation) => void;
-}) {
+export type DeliveryMapPickerHandle = {
+  /** Переместить метку и карту в указанную точку (без повторного геокодирования). */
+  moveToCoords: (coords: [number, number]) => void;
+};
+
+const DeliveryMapPicker = forwardRef<
+  DeliveryMapPickerHandle,
+  {
+    value: DeliveryLocation | null;
+    onChange: (next: DeliveryLocation) => void;
+  }
+>(function DeliveryMapPicker({ value, onChange }, forwardedRef) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<YmapsMap | null>(null);
   const placemarkRef = useRef<YmapsPlacemark | null>(null);
@@ -28,22 +33,34 @@ export default function DeliveryMapPicker({
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const container = mapContainerRef.current;
     const initialCoords: [number, number] = value ? [value.lat, value.lon] : DEFAULT_CENTER;
 
-    async function moveTo(coords: [number, number]) {
+    async function moveTo(coords: [number, number], reverseGeocode: boolean) {
       placemarkRef.current?.geometry.setCoordinates(coords);
+      mapRef.current?.setCenter(coords);
+      if (!reverseGeocode) return;
+
       setGeocoding(true);
+      setGeocodeError(null);
       try {
         const result = await window.ymaps.geocode(coords);
         const geoObject = result.geoObjects.get(0);
         const address = geoObject?.getAddressLine() ?? "";
-        if (!cancelled) onChangeRef.current({ lat: coords[0], lon: coords[1], address });
-      } catch {
-        if (!cancelled) onChangeRef.current({ lat: coords[0], lon: coords[1], address: "" });
+        if (cancelled) return;
+        if (!address) {
+          setGeocodeError("Не удалось определить адрес по этой точке. Введите его вручную ниже.");
+        }
+        onChangeRef.current({ lat: coords[0], lon: coords[1], address });
+      } catch (err) {
+        console.error("Ошибка обратного геокодирования (карта → адрес):", err);
+        if (cancelled) return;
+        setGeocodeError("Не удалось определить адрес по этой точке. Введите его вручную ниже.");
+        onChangeRef.current({ lat: coords[0], lon: coords[1], address: "" });
       } finally {
         if (!cancelled) setGeocoding(false);
       }
@@ -51,32 +68,37 @@ export default function DeliveryMapPicker({
 
     loadYandexMaps()
       .then((ymaps) => {
-        if (cancelled || !container) return;
-        const map = new ymaps.Map(container, {
-          center: initialCoords,
-          zoom: 16,
-          controls: ["zoomControl"],
-        });
-        const placemark = new ymaps.Placemark(
-          initialCoords,
-          {},
-          { preset: "islands#redDotIcon", draggable: true },
-        );
-        map.geoObjects.add(placemark);
-        mapRef.current = map;
-        placemarkRef.current = placemark;
+        // ymaps.ready гарантирует, что API полностью инициализирован —
+        // без этого geocode() может молча не сработать.
+        ymaps.ready(() => {
+          if (cancelled || !container) return;
+          const map = new ymaps.Map(container, {
+            center: initialCoords,
+            zoom: 16,
+            controls: ["zoomControl"],
+          });
+          const placemark = new ymaps.Placemark(
+            initialCoords,
+            {},
+            { preset: "islands#redDotIcon", draggable: true },
+          );
+          map.geoObjects.add(placemark);
+          mapRef.current = map;
+          placemarkRef.current = placemark;
 
-        placemark.events.add("dragend", () => {
-          void moveTo(placemark.geometry.getCoordinates());
-        });
-        map.events.add("click", (e) => {
-          void moveTo(e.get("coords"));
-        });
+          placemark.events.add("dragend", () => {
+            void moveTo(placemark.geometry.getCoordinates(), true);
+          });
+          map.events.add("click", (e) => {
+            void moveTo(e.get("coords"), true);
+          });
 
-        setMapReady(true);
-        if (!value) void moveTo(initialCoords);
+          setMapReady(true);
+          if (!value) void moveTo(initialCoords, true);
+        });
       })
       .catch((err) => {
+        console.error("Не удалось загрузить Яндекс.Карты:", err);
         setMapError(err instanceof Error ? err.message : "Не удалось загрузить карту");
       });
 
@@ -89,6 +111,15 @@ export default function DeliveryMapPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useImperativeHandle(forwardedRef, () => ({
+    moveToCoords(coords: [number, number]) {
+      void (async () => {
+        placemarkRef.current?.geometry.setCoordinates(coords);
+        mapRef.current?.setCenter(coords, 16);
+      })();
+    },
+  }));
+
   return (
     <div className="flex flex-col gap-2">
       <div
@@ -97,11 +128,14 @@ export default function DeliveryMapPicker({
       />
       {mapError && <p className="text-sm text-red-600">{mapError}</p>}
       {geocoding && <p className="text-sm text-ink/50">Определяем адрес…</p>}
-      {mapReady && !mapError && !geocoding && (
+      {geocodeError && !geocoding && <p className="text-sm text-red-600">{geocodeError}</p>}
+      {mapReady && !mapError && !geocoding && !geocodeError && (
         <p className="text-xs text-ink/50">
           Перетащите метку или кликните на карте, чтобы указать точку доставки.
         </p>
       )}
     </div>
   );
-}
+});
+
+export default DeliveryMapPicker;

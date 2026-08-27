@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { PaymentMethod } from "@/types/order";
 import { isBlank, isValidPhone } from "@/lib/validation";
-import DeliveryMapPicker, { type DeliveryLocation } from "@/components/DeliveryMapPicker";
+import DeliveryMapPicker, {
+  type DeliveryLocation,
+  type DeliveryMapPickerHandle,
+} from "@/components/DeliveryMapPicker";
+import { loadYandexMaps } from "@/lib/yandexMapsLoader";
 import { haversineDistanceKm, CAFE_COORDS, MAX_DELIVERY_RADIUS_KM } from "@/lib/deliveryZone";
+
+const ADDRESS_GEOCODE_DEBOUNCE_MS = 900;
 
 type FieldErrors = {
   name?: string;
@@ -31,6 +37,55 @@ export default function CheckoutPage() {
 
   const distanceKm = location ? haversineDistanceKm(CAFE_COORDS, location) : null;
   const isOutOfDeliveryZone = distanceKm !== null && distanceKm > MAX_DELIVERY_RADIUS_KM;
+
+  const mapPickerRef = useRef<DeliveryMapPickerHandle>(null);
+  // Ставится в true, когда адрес заполнился ИЗ карты (обратное геокодирование) —
+  // чтобы не запускать прямое геокодирование этого же текста обратно на себя.
+  const skipNextForwardGeocodeRef = useRef(false);
+  const forwardGeocodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function forwardGeocodeAddress(text: string) {
+    try {
+      const ymaps = await loadYandexMaps();
+      const result = await ymaps.geocode(text);
+      const geoObject = result.geoObjects.get(0);
+      if (!geoObject) return; // адрес не найден — метку не двигаем, текст оставляем как есть
+
+      const coords = geoObject.geometry.getCoordinates();
+      mapPickerRef.current?.moveToCoords(coords);
+      setLocation({ lat: coords[0], lon: coords[1], address: text });
+      if (fieldErrors.address) setFieldErrors((prev) => ({ ...prev, address: undefined }));
+    } catch (err) {
+      console.error("Ошибка прямого геокодирования (адрес → карта):", err);
+      // Не найден/ошибка сети — оставляем как есть, клиент может оформить
+      // заказ с введённым вручную текстом без точки на карте.
+    }
+  }
+
+  useEffect(() => {
+    // Флаг должен сбрасываться на каждое изменение address, даже если новое
+    // значение пустое — иначе он "залипнет" и погасит следующий реальный ввод.
+    if (skipNextForwardGeocodeRef.current) {
+      skipNextForwardGeocodeRef.current = false;
+      return;
+    }
+    if (isBlank(address)) return;
+    forwardGeocodeTimerRef.current = setTimeout(() => {
+      void forwardGeocodeAddress(address);
+    }, ADDRESS_GEOCODE_DEBOUNCE_MS);
+    return () => {
+      if (forwardGeocodeTimerRef.current) clearTimeout(forwardGeocodeTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
+  function handleAddressBlur() {
+    if (forwardGeocodeTimerRef.current) {
+      clearTimeout(forwardGeocodeTimerRef.current);
+      forwardGeocodeTimerRef.current = null;
+    }
+    if (!isBlank(address)) void forwardGeocodeAddress(address);
+  }
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
@@ -206,8 +261,10 @@ export default function CheckoutPage() {
             Точка доставки на карте
           </span>
           <DeliveryMapPicker
+            ref={mapPickerRef}
             value={location}
             onChange={(next) => {
+              skipNextForwardGeocodeRef.current = true;
               setLocation(next);
               setAddress(next.address);
               if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: undefined });
@@ -233,6 +290,7 @@ export default function CheckoutPage() {
               setAddress(e.target.value);
               if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: undefined });
             }}
+            onBlur={handleAddressBlur}
             aria-invalid={Boolean(fieldErrors.address)}
             className={`w-full rounded-xl border bg-white px-4 py-2 text-ink outline-none focus:border-primary ${
               fieldErrors.address ? "border-red-400" : "border-black/10"
