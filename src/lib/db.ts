@@ -36,6 +36,8 @@ export function ensureSchema(): Promise<void> {
           name TEXT NOT NULL,
           phone TEXT NOT NULL,
           address TEXT NOT NULL,
+          lat DOUBLE PRECISION,
+          lon DOUBLE PRECISION,
           comment TEXT,
           items JSONB NOT NULL,
           total_price INTEGER NOT NULL,
@@ -45,6 +47,8 @@ export function ensureSchema(): Promise<void> {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION`;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS lon DOUBLE PRECISION`;
       await sql`
         CREATE TABLE IF NOT EXISTS categories (
           id TEXT PRIMARY KEY,

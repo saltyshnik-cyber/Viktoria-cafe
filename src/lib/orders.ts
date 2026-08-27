@@ -6,6 +6,8 @@ type OrderRow = {
   name: string;
   phone: string;
   address: string;
+  lat: number | null;
+  lon: number | null;
   comment: string | null;
   items: Order["items"];
   total_price: number;
@@ -21,6 +23,8 @@ function rowToOrder(row: OrderRow): Order {
     name: row.name,
     phone: row.phone,
     address: row.address,
+    lat: row.lat ?? undefined,
+    lon: row.lon ?? undefined,
     comment: row.comment ?? undefined,
     items: row.items,
     totalPrice: row.total_price,
@@ -37,16 +41,18 @@ function rowToOrder(row: OrderRow): Order {
 export async function saveOrder(order: Order): Promise<void> {
   await ensureSchema();
   await sql`
-    INSERT INTO orders (id, name, phone, address, comment, items, total_price, payment_method, status, payment_id, created_at)
+    INSERT INTO orders (id, name, phone, address, lat, lon, comment, items, total_price, payment_method, status, payment_id, created_at)
     VALUES (
-      ${order.id}, ${order.name}, ${order.phone}, ${order.address}, ${order.comment ?? null},
-      ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.paymentMethod},
+      ${order.id}, ${order.name}, ${order.phone}, ${order.address}, ${order.lat ?? null}, ${order.lon ?? null},
+      ${order.comment ?? null}, ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.paymentMethod},
       ${order.status}, ${order.paymentId ?? null}, ${order.createdAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name,
       phone = EXCLUDED.phone,
       address = EXCLUDED.address,
+      lat = EXCLUDED.lat,
+      lon = EXCLUDED.lon,
       comment = EXCLUDED.comment,
       items = EXCLUDED.items,
       total_price = EXCLUDED.total_price,

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { PaymentMethod } from "@/types/order";
 import { isBlank, isValidPhone } from "@/lib/validation";
+import DeliveryMapPicker, { type DeliveryLocation } from "@/components/DeliveryMapPicker";
 
 type FieldErrors = {
   name?: string;
@@ -20,6 +21,7 @@ export default function CheckoutPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [location, setLocation] = useState<DeliveryLocation | null>(null);
   const [comment, setComment] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +85,8 @@ export default function CheckoutPage() {
           name,
           phone,
           address,
+          lat: location?.lat,
+          lon: location?.lon,
           comment: comment || undefined,
           items: items.map((item) => ({
             id: item.id,
@@ -187,6 +191,20 @@ export default function CheckoutPage() {
         </div>
 
         <div>
+          <span className="mb-1 block text-sm font-medium text-ink/70">
+            Точка доставки на карте
+          </span>
+          <DeliveryMapPicker
+            value={location}
+            onChange={(next) => {
+              setLocation(next);
+              setAddress(next.address);
+              if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: undefined });
+            }}
+          />
+        </div>
+
+        <div>
           <label htmlFor="address" className="mb-1 block text-sm font-medium text-ink/70">
             Адрес доставки
           </label>
@@ -204,8 +222,13 @@ export default function CheckoutPage() {
             }`}
             placeholder="Улица, дом, квартира/офис"
           />
-          {fieldErrors.address && (
+          {fieldErrors.address ? (
             <p className="mt-1 text-sm text-red-600">{fieldErrors.address}</p>
+          ) : (
+            <p className="mt-1 text-xs text-ink/50">
+              Адрес подставляется по метке на карте — можно поправить вручную,
+              если не нашли нужную точку.
+            </p>
           )}
         </div>
 

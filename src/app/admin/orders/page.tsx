@@ -1,5 +1,6 @@
 import { getAllOrders } from "@/lib/orders";
 import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
+import { yandexMapPinUrl } from "@/lib/mapsLink";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,19 @@ export default async function AdminOrdersPage() {
                 <div>
                   {order.name} · {order.phone}
                 </div>
-                <div>{order.address}</div>
+                <div>
+                  {order.address}
+                  {order.lat != null && order.lon != null && (
+                    <a
+                      href={yandexMapPinUrl(order.lat, order.lon)}
+                      target="_blank"
+                      rel="noopener"
+                      className="ml-2 text-primary hover:underline"
+                    >
+                      Точка на карте →
+                    </a>
+                  )}
+                </div>
                 {order.comment && (
                   <div className="sm:col-span-2">
                     Комментарий: {order.comment}

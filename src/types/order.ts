@@ -20,6 +20,8 @@ export type OrderPayload = {
   name: string;
   phone: string;
   address: string;
+  lat?: number;
+  lon?: number;
   comment?: string;
   items: OrderItem[];
   totalPrice: number;

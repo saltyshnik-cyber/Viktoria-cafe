@@ -1,4 +1,5 @@
 import type { Order } from "@/types/order";
+import { yandexMapPinUrl } from "@/lib/mapsLink";
 
 const TELEGRAM_API_URL = "https://api.telegram.org";
 
@@ -60,6 +61,9 @@ function formatOrderMessage(order: Order, title: string): string {
     `Имя: ${order.name}`,
     `Телефон: ${order.phone}`,
     `Адрес: ${order.address}`,
+    order.lat != null && order.lon != null
+      ? `Точка на карте: ${yandexMapPinUrl(order.lat, order.lon)}`
+      : undefined,
     order.comment ? `Комментарий: ${order.comment}` : undefined,
   ]
     .filter((line): line is string => line !== undefined)

@@ -31,8 +31,16 @@ export async function POST(request: Request) {
   }
 
   const id = crypto.randomUUID().slice(0, 8);
+  const hasValidCoords =
+    typeof payload.lat === "number" &&
+    typeof payload.lon === "number" &&
+    Number.isFinite(payload.lat) &&
+    Number.isFinite(payload.lon);
+
   const order: Order = {
     ...payload,
+    lat: hasValidCoords ? payload.lat : undefined,
+    lon: hasValidCoords ? payload.lon : undefined,
     id,
     createdAt: new Date().toISOString(),
     status: payload.paymentMethod === "card" ? "awaiting_payment" : "new",
