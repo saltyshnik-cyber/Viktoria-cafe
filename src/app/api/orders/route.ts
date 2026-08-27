@@ -4,7 +4,6 @@ import { saveOrder } from "@/lib/orders";
 import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isBlank, isValidPhone } from "@/lib/validation";
-import { haversineDistanceKm, CAFE_COORDS, MAX_DELIVERY_RADIUS_KM } from "@/lib/deliveryZone";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as OrderPayload;
@@ -36,17 +35,6 @@ export async function POST(request: Request) {
     typeof payload.lon === "number" &&
     Number.isFinite(payload.lat) &&
     Number.isFinite(payload.lon);
-
-  if (
-    hasValidCoords &&
-    haversineDistanceKm(CAFE_COORDS, { lat: payload.lat as number, lon: payload.lon as number }) >
-      MAX_DELIVERY_RADIUS_KM
-  ) {
-    return NextResponse.json(
-      { error: "К сожалению, доставка по этому адресу недоступна — адрес вне зоны доставки." },
-      { status: 400 },
-    );
-  }
 
   const id = crypto.randomUUID().slice(0, 8);
 
