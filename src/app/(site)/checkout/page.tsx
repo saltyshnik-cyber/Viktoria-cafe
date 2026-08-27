@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import type { PaymentMethod } from "@/types/order";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import DeliveryMapPicker, { type DeliveryLocation } from "@/components/DeliveryMapPicker";
+import { haversineDistanceKm, CAFE_COORDS, MAX_DELIVERY_RADIUS_KM } from "@/lib/deliveryZone";
 
 type FieldErrors = {
   name?: string;
@@ -27,6 +28,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const distanceKm = location ? haversineDistanceKm(CAFE_COORDS, location) : null;
+  const isOutOfDeliveryZone = distanceKm !== null && distanceKm > MAX_DELIVERY_RADIUS_KM;
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
@@ -72,6 +76,13 @@ export default function CheckoutPage() {
     const errors = validate();
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    if (isOutOfDeliveryZone) {
+      setError(
+        "К сожалению, доставка по этому адресу недоступна — адрес вне зоны доставки.",
+      );
       return;
     }
 
@@ -202,6 +213,12 @@ export default function CheckoutPage() {
               if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: undefined });
             }}
           />
+          {isOutOfDeliveryZone && (
+            <p className="mt-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              К сожалению, доставка по этому адресу недоступна — адрес вне зоны
+              доставки.
+            </p>
+          )}
         </div>
 
         <div>
@@ -296,14 +313,16 @@ export default function CheckoutPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isOutOfDeliveryZone}
           className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-cream transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSubmitting
             ? "Отправляем..."
-            : paymentMethod === "card"
-              ? `Оплатить ${totalPrice} ₽`
-              : `Подтвердить заказ на ${totalPrice} ₽`}
+            : isOutOfDeliveryZone
+              ? "Адрес вне зоны доставки"
+              : paymentMethod === "card"
+                ? `Оплатить ${totalPrice} ₽`
+                : `Подтвердить заказ на ${totalPrice} ₽`}
         </button>
       </form>
     </div>
