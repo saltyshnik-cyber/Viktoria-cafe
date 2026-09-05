@@ -346,7 +346,7 @@ type MenuItemRow = {
   name: string;
   description: string;
   weight: string;
-  price: number;
+  price: number | null;
   is_popular: boolean;
   photo_url: string;
   is_available: boolean;
@@ -359,7 +359,7 @@ function rowToItem(row: MenuItemRow): MenuItem {
     name: row.name,
     description: row.description,
     weight: row.weight,
-    price: row.price,
+    price: row.price ?? undefined,
     isPopular: row.is_popular,
     photoUrl: row.photo_url,
     isAvailable: row.is_available,
@@ -391,8 +391,10 @@ function ready(): Promise<void> {
 
 export async function getAllMenuItems(): Promise<MenuItem[]> {
   await ready();
+  // Блюдо без цены — черновик, ещё не готов к показу гостям (даже если
+  // "Скрыть" не отмечено вручную): без цены его нельзя положить в корзину.
   const rows = (await sql`
-    SELECT * FROM menu_items WHERE is_available = TRUE ORDER BY category_id, name
+    SELECT * FROM menu_items WHERE is_available = TRUE AND price IS NOT NULL ORDER BY category_id, name
   `) as MenuItemRow[];
   return rows.map(rowToItem);
 }
@@ -408,7 +410,7 @@ export async function getAllMenuItemsAdmin(): Promise<MenuItem[]> {
 export async function getMenuItemsByCategory(categoryId: string): Promise<MenuItem[]> {
   await ready();
   const rows = (await sql`
-    SELECT * FROM menu_items WHERE category_id = ${categoryId} AND is_available = TRUE ORDER BY name
+    SELECT * FROM menu_items WHERE category_id = ${categoryId} AND is_available = TRUE AND price IS NOT NULL ORDER BY name
   `) as MenuItemRow[];
   return rows.map(rowToItem);
 }
@@ -418,7 +420,7 @@ export async function createMenuItem(data: Omit<MenuItem, "id">): Promise<MenuIt
   const id = crypto.randomUUID().slice(0, 8);
   await sql`
     INSERT INTO menu_items (id, category_id, name, description, weight, price, is_popular, photo_url, is_available)
-    VALUES (${id}, ${data.categoryId}, ${data.name}, ${data.description}, ${data.weight}, ${data.price}, ${data.isPopular ?? false}, ${data.photoUrl ?? ""}, ${data.isAvailable ?? true})
+    VALUES (${id}, ${data.categoryId}, ${data.name}, ${data.description}, ${data.weight}, ${data.price ?? null}, ${data.isPopular ?? false}, ${data.photoUrl ?? ""}, ${data.isAvailable ?? true})
   `;
   return { ...data, id };
 }
@@ -431,7 +433,7 @@ export async function updateMenuItem(
   const rows = (await sql`
     UPDATE menu_items
     SET category_id = ${data.categoryId}, name = ${data.name}, description = ${data.description},
-        weight = ${data.weight}, price = ${data.price}, is_popular = ${data.isPopular ?? false},
+        weight = ${data.weight}, price = ${data.price ?? null}, is_popular = ${data.isPopular ?? false},
         photo_url = ${data.photoUrl ?? ""}, is_available = ${data.isAvailable ?? true}
     WHERE id = ${id}
     RETURNING id

@@ -34,7 +34,7 @@ function itemToForm(item: MenuItem): ItemFormState {
     name: item.name,
     description: item.description,
     weight: item.weight,
-    price: String(item.price),
+    price: item.price != null ? String(item.price) : "",
     isPopular: Boolean(item.isPopular),
     photoUrl: item.photoUrl ?? "",
     isAvailable: item.isAvailable ?? true,
@@ -112,7 +112,7 @@ function ItemForm({
       <input
         value={value.name}
         onChange={(e) => onChange({ ...value, name: e.target.value })}
-        placeholder="Название"
+        placeholder="Название *"
         className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
       />
       <select
@@ -143,7 +143,7 @@ function ItemForm({
         onChange={(e) => onChange({ ...value, price: e.target.value })}
         type="number"
         min="0"
-        placeholder="Цена, ₽"
+        placeholder="Цена, ₽ (можно дозаполнить позже)"
         className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
       />
       <label className="flex items-center gap-2 text-sm text-ink/70">
@@ -187,7 +187,7 @@ export default function AdminMenuManager({
       name: form.name.trim(),
       description: form.description.trim(),
       weight: form.weight.trim(),
-      price: Number(form.price),
+      price: form.price.trim() ? Number(form.price) : undefined,
       isPopular: form.isPopular,
       photoUrl: form.photoUrl,
       isAvailable: form.isAvailable,
@@ -272,7 +272,7 @@ export default function AdminMenuManager({
         <button
           type="button"
           onClick={handleCreate}
-          disabled={isSaving || !newItem.name.trim() || !newItem.price}
+          disabled={isSaving || !newItem.name.trim() || !newItem.categoryId}
           className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-cream transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           Добавить
@@ -357,12 +357,22 @@ export default function AdminMenuManager({
                                 Скрыто
                               </span>
                             )}
+                            {item.isAvailable !== false && item.price == null && (
+                              <span
+                                className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+                                title="Без цены блюдо нельзя добавить в корзину, поэтому оно не показывается на сайте, пока цена не заполнена"
+                              >
+                                Черновик — не видно гостям, нет цены
+                              </span>
+                            )}
                           </div>
                           <div className="mt-0.5 text-sm text-ink/60">
                             {item.description}
                           </div>
                           <div className="mt-1 text-sm text-ink/50">
-                            {item.weight} · {item.price} ₽
+                            {[item.weight, item.price != null ? `${item.price} ₽` : "цена не указана"]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </div>
                         </div>
                       </div>

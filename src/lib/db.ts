@@ -22,7 +22,7 @@ export function ensureSchema(): Promise<void> {
           name TEXT NOT NULL,
           description TEXT NOT NULL DEFAULT '',
           weight TEXT NOT NULL DEFAULT '',
-          price INTEGER NOT NULL,
+          price INTEGER,
           is_popular BOOLEAN NOT NULL DEFAULT FALSE,
           photo_url TEXT NOT NULL DEFAULT '',
           is_available BOOLEAN NOT NULL DEFAULT TRUE
@@ -30,6 +30,9 @@ export function ensureSchema(): Promise<void> {
       `;
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS photo_url TEXT NOT NULL DEFAULT ''`;
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_available BOOLEAN NOT NULL DEFAULT TRUE`;
+      // Цена теперь необязательна при создании — можно быстро занести
+      // блюдо по названию и категории, дозаполнив остальное позже.
+      await sql`ALTER TABLE menu_items ALTER COLUMN price DROP NOT NULL`;
       await sql`
         CREATE TABLE IF NOT EXISTS orders (
           id TEXT PRIMARY KEY,

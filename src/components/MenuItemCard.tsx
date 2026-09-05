@@ -8,6 +8,11 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
   const { getQuantity, addItem, setQuantity } = useCart();
   const quantity = getQuantity(item.id);
 
+  if (item.price == null) {
+    return null;
+  }
+  const price = item.price;
+
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gold/20 bg-parchment-light transition hover:shadow-lg hover:shadow-black/30">
       <div className="flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-warm text-3xl">
@@ -36,7 +41,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
 
         <div className="mt-auto flex items-center pt-2">
           {item.weight && <span className="text-xs text-ink/50">{item.weight}</span>}
-          <span className="ml-auto font-semibold text-char">{item.price} ₽</span>
+          <span className="ml-auto font-semibold text-char">{price} ₽</span>
         </div>
 
         <div className="mt-2">
@@ -47,7 +52,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
                 addItem({
                   id: item.id,
                   name: item.name,
-                  price: item.price,
+                  price,
                   weight: item.weight,
                 })
               }

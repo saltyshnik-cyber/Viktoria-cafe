@@ -10,7 +10,7 @@ export type MenuItem = {
   name: string;
   description: string;
   weight: string;
-  price: number;
+  price?: number;
   isPopular?: boolean;
   photoUrl?: string;
   isAvailable?: boolean;
