@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { MenuCategory, MenuItem } from "@/types/menu";
 import { uploadPhoto } from "@/lib/uploadPhoto";
 
@@ -110,6 +110,14 @@ function PhotoPicker({
   );
 }
 
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40">
+      {children}
+    </h3>
+  );
+}
+
 function ItemForm({
   categories,
   menuItems,
@@ -126,6 +134,8 @@ function ItemForm({
   const pickableItems = menuItems.filter(
     (item) => item.id !== excludeId && (item.composition?.length ?? 0) === 0,
   );
+  const selectedCategory = categories.find((c) => c.id === value.categoryId);
+  const isCombo = selectedCategory?.name.trim().toLowerCase() === "комбо";
 
   function updateComponent(index: number, next: ComponentFormState) {
     const composition = [...value.composition];
@@ -141,70 +151,82 @@ function ItemForm({
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <PhotoPicker
-        value={value.photoUrl}
-        onChange={(photoUrl) => onChange({ ...value, photoUrl })}
-      />
-      <input
-        value={value.name}
-        onChange={(e) => onChange({ ...value, name: e.target.value })}
-        placeholder="Название *"
-        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-      />
-      <select
-        value={value.categoryId}
-        onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
-        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-      >
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.emoji} {category.name}
-          </option>
-        ))}
-      </select>
-      <input
-        value={value.description}
-        onChange={(e) => onChange({ ...value, description: e.target.value })}
-        placeholder="Описание"
-        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary sm:col-span-2"
-      />
-      <input
-        value={value.weight}
-        onChange={(e) => onChange({ ...value, weight: e.target.value })}
-        placeholder="Вес/объём, напр. 300 г"
-        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-      />
-      <input
-        value={value.price}
-        onChange={(e) => onChange({ ...value, price: e.target.value })}
-        type="number"
-        min="0"
-        placeholder="Цена, ₽ (можно дозаполнить позже)"
-        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-      />
-      <label className="flex items-center gap-2 text-sm text-ink/70">
-        <input
-          type="checkbox"
-          checked={value.isPopular}
-          onChange={(e) => onChange({ ...value, isPopular: e.target.checked })}
-        />
-        Хит меню
-      </label>
-      <label className="flex items-center gap-2 text-sm text-ink/70">
-        <input
-          type="checkbox"
-          checked={!value.isAvailable}
-          onChange={(e) => onChange({ ...value, isAvailable: !e.target.checked })}
-        />
-        Скрыть (временно закончилось)
-      </label>
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <SectionLabel>Основное</SectionLabel>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <PhotoPicker
+            value={value.photoUrl}
+            onChange={(photoUrl) => onChange({ ...value, photoUrl })}
+          />
+          <input
+            value={value.name}
+            onChange={(e) => onChange({ ...value, name: e.target.value })}
+            placeholder="Название *"
+            className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          />
+          <select
+            value={value.categoryId}
+            onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
+            className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          >
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.emoji} {category.name}
+              </option>
+            ))}
+          </select>
+          <input
+            value={value.description}
+            onChange={(e) => onChange({ ...value, description: e.target.value })}
+            placeholder="Описание"
+            className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary sm:col-span-2"
+          />
+          <input
+            value={value.weight}
+            onChange={(e) => onChange({ ...value, weight: e.target.value })}
+            placeholder="Вес/объём, напр. 300 г"
+            className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          />
+          <input
+            value={value.price}
+            onChange={(e) => onChange({ ...value, price: e.target.value })}
+            type="number"
+            min="0"
+            placeholder="Цена, ₽ (можно дозаполнить позже)"
+            className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          />
+        </div>
+      </div>
 
-      <div className="sm:col-span-2">
-        <span className="mb-1 block text-sm font-medium text-ink/70">
-          Варианты соуса (необязательно)
-        </span>
-        <div className="space-y-2">
+      <div className="space-y-3 border-t border-black/10 pt-4">
+        <SectionLabel>Дополнительно</SectionLabel>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
+          <label className="flex items-center gap-2 text-sm text-ink/70">
+            <input
+              type="checkbox"
+              checked={value.isPopular}
+              onChange={(e) => onChange({ ...value, isPopular: e.target.checked })}
+            />
+            Хит меню
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink/70">
+            <input
+              type="checkbox"
+              checked={!value.isAvailable}
+              onChange={(e) => onChange({ ...value, isAvailable: !e.target.checked })}
+            />
+            Скрыть (временно закончилось)
+          </label>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-black/10 bg-cream/60 p-3 sm:p-4">
+        <h3 className="text-sm font-semibold text-ink">Варианты соуса</h3>
+        <p className="mt-0.5 text-xs text-ink/50">
+          Необязательно — если заданы, гость выбирает один вариант при заказе
+        </p>
+        <div className="mt-3 space-y-2">
           {value.sauceOptions.map((option, index) => (
             <div key={index} className="flex items-center gap-2">
               <input
@@ -244,75 +266,78 @@ function ItemForm({
         </div>
       </div>
 
-      <div className="sm:col-span-2">
-        <span className="mb-1 block text-sm font-medium text-ink/70">
-          Состав комбо (необязательно — заполните, если это набор из нескольких позиций)
-        </span>
-        <div className="space-y-2">
-          {value.composition.map((component, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <input
-                value={component.name}
-                onChange={(e) => updateComponent(index, { ...component, name: e.target.value })}
-                placeholder="Название позиции"
-                className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-              />
-              <input
-                value={component.quantity}
-                onChange={(e) => updateComponent(index, { ...component, quantity: e.target.value })}
-                type="number"
-                min="1"
-                placeholder="Кол-во"
-                className="w-20 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-              />
+      {isCombo && (
+        <div className="rounded-xl border border-black/10 bg-cream/60 p-3 sm:p-4">
+          <h3 className="text-sm font-semibold text-ink">Состав комбо</h3>
+          <p className="mt-0.5 text-xs text-ink/50">
+            Из каких позиций состоит набор — выберите из меню или впишите текстом
+          </p>
+          <div className="mt-3 space-y-2">
+            {value.composition.map((component, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  value={component.name}
+                  onChange={(e) => updateComponent(index, { ...component, name: e.target.value })}
+                  placeholder="Название позиции"
+                  className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                />
+                <input
+                  value={component.quantity}
+                  onChange={(e) => updateComponent(index, { ...component, quantity: e.target.value })}
+                  type="number"
+                  min="1"
+                  placeholder="Кол-во"
+                  className="w-20 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeComponent(index)}
+                  aria-label="Удалить позицию из состава"
+                  className="text-sm text-ink/40 hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value=""
+                onChange={(e) => {
+                  const selected = pickableItems.find((item) => item.id === e.target.value);
+                  if (!selected) return;
+                  onChange({
+                    ...value,
+                    composition: [
+                      ...value.composition,
+                      { name: selected.name, quantity: "1", menuItemId: selected.id },
+                    ],
+                  });
+                }}
+                className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              >
+                <option value="">Добавить блюдо из меню…</option>
+                {pickableItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
-                onClick={() => removeComponent(index)}
-                aria-label="Удалить позицию из состава"
-                className="text-sm text-ink/40 hover:text-red-600"
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    composition: [...value.composition, { name: "", quantity: "1" }],
+                  })
+                }
+                className="text-sm font-medium text-primary hover:underline"
               >
-                ✕
+                + добавить текстом
               </button>
             </div>
-          ))}
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value=""
-              onChange={(e) => {
-                const selected = pickableItems.find((item) => item.id === e.target.value);
-                if (!selected) return;
-                onChange({
-                  ...value,
-                  composition: [
-                    ...value.composition,
-                    { name: selected.name, quantity: "1", menuItemId: selected.id },
-                  ],
-                });
-              }}
-              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-            >
-              <option value="">Добавить блюдо из меню…</option>
-              {pickableItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() =>
-                onChange({
-                  ...value,
-                  composition: [...value.composition, { name: "", quantity: "1" }],
-                })
-              }
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              + добавить текстом
-            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
