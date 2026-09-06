@@ -4,6 +4,12 @@ import { useState } from "react";
 import type { MenuCategory, MenuItem } from "@/types/menu";
 import { uploadPhoto } from "@/lib/uploadPhoto";
 
+type ComponentFormState = {
+  name: string;
+  quantity: string;
+  menuItemId?: string;
+};
+
 type ItemFormState = {
   categoryId: string;
   name: string;
@@ -14,6 +20,7 @@ type ItemFormState = {
   photoUrl: string;
   isAvailable: boolean;
   sauceOptions: string[];
+  composition: ComponentFormState[];
 };
 
 function emptyForm(categories: MenuCategory[]): ItemFormState {
@@ -27,6 +34,7 @@ function emptyForm(categories: MenuCategory[]): ItemFormState {
     photoUrl: "",
     isAvailable: true,
     sauceOptions: [],
+    composition: [],
   };
 }
 
@@ -41,6 +49,11 @@ function itemToForm(item: MenuItem): ItemFormState {
     photoUrl: item.photoUrl ?? "",
     isAvailable: item.isAvailable ?? true,
     sauceOptions: item.sauceOptions ?? [],
+    composition: (item.composition ?? []).map((c) => ({
+      name: c.name,
+      quantity: String(c.quantity),
+      menuItemId: c.menuItemId,
+    })),
   };
 }
 
@@ -99,13 +112,34 @@ function PhotoPicker({
 
 function ItemForm({
   categories,
+  menuItems,
+  excludeId,
   value,
   onChange,
 }: {
   categories: MenuCategory[];
+  menuItems: MenuItem[];
+  excludeId?: string;
   value: ItemFormState;
   onChange: (next: ItemFormState) => void;
 }) {
+  const pickableItems = menuItems.filter(
+    (item) => item.id !== excludeId && (item.composition?.length ?? 0) === 0,
+  );
+
+  function updateComponent(index: number, next: ComponentFormState) {
+    const composition = [...value.composition];
+    composition[index] = next;
+    onChange({ ...value, composition });
+  }
+
+  function removeComponent(index: number) {
+    onChange({
+      ...value,
+      composition: value.composition.filter((_, i) => i !== index),
+    });
+  }
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <PhotoPicker
@@ -209,6 +243,76 @@ function ItemForm({
           </button>
         </div>
       </div>
+
+      <div className="sm:col-span-2">
+        <span className="mb-1 block text-sm font-medium text-ink/70">
+          Состав комбо (необязательно — заполните, если это набор из нескольких позиций)
+        </span>
+        <div className="space-y-2">
+          {value.composition.map((component, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <input
+                value={component.name}
+                onChange={(e) => updateComponent(index, { ...component, name: e.target.value })}
+                placeholder="Название позиции"
+                className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              />
+              <input
+                value={component.quantity}
+                onChange={(e) => updateComponent(index, { ...component, quantity: e.target.value })}
+                type="number"
+                min="1"
+                placeholder="Кол-во"
+                className="w-20 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() => removeComponent(index)}
+                aria-label="Удалить позицию из состава"
+                className="text-sm text-ink/40 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value=""
+              onChange={(e) => {
+                const selected = pickableItems.find((item) => item.id === e.target.value);
+                if (!selected) return;
+                onChange({
+                  ...value,
+                  composition: [
+                    ...value.composition,
+                    { name: selected.name, quantity: "1", menuItemId: selected.id },
+                  ],
+                });
+              }}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+            >
+              <option value="">Добавить блюдо из меню…</option>
+              {pickableItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...value,
+                  composition: [...value.composition, { name: "", quantity: "1" }],
+                })
+              }
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              + добавить текстом
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -239,6 +343,13 @@ export default function AdminMenuManager({
       photoUrl: form.photoUrl,
       isAvailable: form.isAvailable,
       sauceOptions: form.sauceOptions.map((s) => s.trim()).filter((s) => s.length > 0),
+      composition: form.composition
+        .map((c) => ({
+          name: c.name.trim(),
+          quantity: Math.max(1, Math.floor(Number(c.quantity) || 1)),
+          menuItemId: c.menuItemId,
+        }))
+        .filter((c) => c.name.length > 0),
     };
   }
 
@@ -314,7 +425,12 @@ export default function AdminMenuManager({
       <div className="rounded-xl2 border border-black/10 bg-white p-4">
         <h2 className="font-semibold text-ink">Добавить блюдо</h2>
         <div className="mt-3">
-          <ItemForm categories={categories} value={newItem} onChange={setNewItem} />
+          <ItemForm
+            categories={categories}
+            menuItems={items}
+            value={newItem}
+            onChange={setNewItem}
+          />
         </div>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         <button
@@ -350,6 +466,8 @@ export default function AdminMenuManager({
                     <div>
                       <ItemForm
                         categories={categories}
+                        menuItems={items}
+                        excludeId={item.id}
                         value={editForm}
                         onChange={setEditForm}
                       />
@@ -425,6 +543,14 @@ export default function AdminMenuManager({
                           {item.sauceOptions && item.sauceOptions.length > 0 && (
                             <div className="mt-1 text-sm text-ink/50">
                               Соусы: {item.sauceOptions.join(", ")}
+                            </div>
+                          )}
+                          {item.composition && item.composition.length > 0 && (
+                            <div className="mt-1 text-sm text-ink/50">
+                              Состав:{" "}
+                              {item.composition
+                                .map((c) => (c.quantity > 1 ? `${c.name} × ${c.quantity}` : c.name))
+                                .join(", ")}
                             </div>
                           )}
                         </div>

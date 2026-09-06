@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createMenuItem } from "@/lib/menu-store";
+import { createMenuItem, parseComposition } from "@/lib/menu-store";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -29,6 +29,8 @@ export async function POST(request: Request) {
         .filter((option: string) => option.length > 0)
     : [];
 
+  const composition = parseComposition(body.composition);
+
   try {
     const item = await createMenuItem({
       categoryId: body.categoryId,
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
       photoUrl: body.photoUrl ?? "",
       isAvailable: body.isAvailable ?? true,
       sauceOptions,
+      composition,
     });
 
     return NextResponse.json({ item });

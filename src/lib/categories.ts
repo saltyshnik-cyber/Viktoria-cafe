@@ -8,6 +8,7 @@ const SEED_CATEGORIES: MenuCategory[] = [
   { id: "drinks", name: "Напитки", emoji: "🥤" },
   { id: "extra", name: "Дополнительно", emoji: "🫔" },
   { id: "khachapuri", name: "Хачапури", emoji: "🫓" },
+  { id: "combo", name: "Комбо", emoji: "🍱" },
 ];
 
 type CategoryRow = { id: string; name: string; emoji: string; sort_order: number };

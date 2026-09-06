@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateMenuItem, deleteMenuItem } from "@/lib/menu-store";
+import { updateMenuItem, deleteMenuItem, parseComposition } from "@/lib/menu-store";
 
 export async function PATCH(
   request: Request,
@@ -33,6 +33,8 @@ export async function PATCH(
         .filter((option: string) => option.length > 0)
     : [];
 
+  const composition = parseComposition(body.composition);
+
   try {
     const item = await updateMenuItem(id, {
       categoryId: body.categoryId,
@@ -44,6 +46,7 @@ export async function PATCH(
       photoUrl: body.photoUrl ?? "",
       isAvailable: body.isAvailable ?? true,
       sauceOptions,
+      composition,
     });
 
     if (!item) {

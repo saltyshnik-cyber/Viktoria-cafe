@@ -43,6 +43,17 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
 
         <p className="line-clamp-2 text-xs text-ink/60">{item.description}</p>
 
+        {item.composition && item.composition.length > 0 && (
+          <ul className="list-inside list-disc text-xs text-ink/60">
+            {item.composition.map((component, index) => (
+              <li key={index}>
+                {component.name}
+                {component.quantity > 1 ? ` × ${component.quantity}` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <div className="mt-auto flex items-center pt-2">
           {item.weight && <span className="text-xs text-ink/50">{item.weight}</span>}
           <span className="ml-auto font-semibold text-char">{price} ₽</span>

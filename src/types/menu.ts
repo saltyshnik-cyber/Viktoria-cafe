@@ -4,6 +4,12 @@ export type MenuCategory = {
   emoji: string;
 };
 
+export type ComboComponent = {
+  name: string;
+  quantity: number;
+  menuItemId?: string;
+};
+
 export type MenuItem = {
   id: string;
   categoryId: string;
@@ -15,4 +21,5 @@ export type MenuItem = {
   photoUrl?: string;
   isAvailable?: boolean;
   sauceOptions?: string[];
+  composition?: ComboComponent[];
 };
