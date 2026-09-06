@@ -64,14 +64,18 @@ export default function CartView({
 
         <ul className="mt-6 divide-y divide-parchment/10">
           {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-4 py-4">
+            <li key={`${item.id}::${item.sauce ?? ""}`} className="flex items-center gap-4 py-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-parchment-light text-2xl">
                 🍽️
               </div>
 
               <div className="flex-1">
                 <div className="font-semibold text-parchment-light">{item.name}</div>
-                <div className="text-sm text-parchment/50">{item.weight}</div>
+                <div className="text-sm text-parchment/50">
+                  {[item.weight, item.sauce && `Соус: ${item.sauce}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
               </div>
 
               <div className="font-semibold text-parchment-light">
@@ -80,13 +84,13 @@ export default function CartView({
 
               <QuantityStepper
                 quantity={item.quantity}
-                onChange={(next) => setQuantity(item.id, next)}
+                onChange={(next) => setQuantity(item.id, next, item.sauce)}
               />
 
               <button
                 type="button"
                 aria-label={`Удалить «${item.name}» из корзины`}
-                onClick={() => removeItem(item.id)}
+                onClick={() => removeItem(item.id, item.sauce)}
                 className="text-parchment/30 hover:text-gold"
               >
                 ✕

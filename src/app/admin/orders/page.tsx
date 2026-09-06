@@ -58,9 +58,13 @@ export default async function AdminOrdersPage() {
               </div>
 
               <ul className="mt-3 space-y-1 text-sm text-ink/70">
-                {order.items.map((item) => (
-                  <li key={item.id}>
-                    {item.name} × {item.quantity} — {item.price * item.quantity} ₽
+                {order.items.map((item, index) => (
+                  <li key={`${item.id}-${item.sauce ?? ""}-${index}`}>
+                    {item.name}
+                    {item.sauce && (
+                      <span className="font-medium text-ink"> — соус: {item.sauce}</span>
+                    )}{" "}
+                    × {item.quantity} — {item.price * item.quantity} ₽
                   </li>
                 ))}
               </ul>

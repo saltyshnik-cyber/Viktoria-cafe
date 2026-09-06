@@ -3,6 +3,7 @@ export type OrderItem = {
   name: string;
   price: number;
   quantity: number;
+  sauce?: string;
 };
 
 export type PaymentMethod = "card" | "cash";

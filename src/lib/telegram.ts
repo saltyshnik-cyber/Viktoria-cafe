@@ -43,7 +43,10 @@ async function sendTelegramMessage(text: string) {
 
 function formatOrderMessage(order: Order, title: string): string {
   const itemsList = order.items
-    .map((item) => `• ${item.name} × ${item.quantity} — ${item.price * item.quantity} ₽`)
+    .map(
+      (item) =>
+        `• ${item.name}${item.sauce ? ` (соус: ${item.sauce})` : ""} × ${item.quantity} — ${item.price * item.quantity} ₽`,
+    )
     .join("\n");
 
   const paymentLabel =

@@ -13,6 +13,7 @@ type ItemFormState = {
   isPopular: boolean;
   photoUrl: string;
   isAvailable: boolean;
+  sauceOptions: string[];
 };
 
 function emptyForm(categories: MenuCategory[]): ItemFormState {
@@ -25,6 +26,7 @@ function emptyForm(categories: MenuCategory[]): ItemFormState {
     isPopular: false,
     photoUrl: "",
     isAvailable: true,
+    sauceOptions: [],
   };
 }
 
@@ -38,6 +40,7 @@ function itemToForm(item: MenuItem): ItemFormState {
     isPopular: Boolean(item.isPopular),
     photoUrl: item.photoUrl ?? "",
     isAvailable: item.isAvailable ?? true,
+    sauceOptions: item.sauceOptions ?? [],
   };
 }
 
@@ -162,6 +165,50 @@ function ItemForm({
         />
         Скрыть (временно закончилось)
       </label>
+
+      <div className="sm:col-span-2">
+        <span className="mb-1 block text-sm font-medium text-ink/70">
+          Варианты соуса (необязательно)
+        </span>
+        <div className="space-y-2">
+          {value.sauceOptions.map((option, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <input
+                value={option}
+                onChange={(e) => {
+                  const next = [...value.sauceOptions];
+                  next[index] = e.target.value;
+                  onChange({ ...value, sauceOptions: next });
+                }}
+                placeholder="Например: Чесночный"
+                className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    sauceOptions: value.sauceOptions.filter((_, i) => i !== index),
+                  })
+                }
+                aria-label="Удалить вариант соуса"
+                className="text-sm text-ink/40 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              onChange({ ...value, sauceOptions: [...value.sauceOptions, ""] })
+            }
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            + добавить вариант
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -191,6 +238,7 @@ export default function AdminMenuManager({
       isPopular: form.isPopular,
       photoUrl: form.photoUrl,
       isAvailable: form.isAvailable,
+      sauceOptions: form.sauceOptions.map((s) => s.trim()).filter((s) => s.length > 0),
     };
   }
 
@@ -374,6 +422,11 @@ export default function AdminMenuManager({
                               .filter(Boolean)
                               .join(" · ")}
                           </div>
+                          {item.sauceOptions && item.sauceOptions.length > 0 && (
+                            <div className="mt-1 text-sm text-ink/50">
+                              Соусы: {item.sauceOptions.join(", ")}
+                            </div>
+                          )}
                         </div>
                       </div>
 

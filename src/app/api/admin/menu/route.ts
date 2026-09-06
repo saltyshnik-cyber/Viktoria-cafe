@@ -23,6 +23,12 @@ export async function POST(request: Request) {
     price = parsed;
   }
 
+  const sauceOptions: string[] = Array.isArray(body.sauceOptions)
+    ? body.sauceOptions
+        .map((option: unknown) => (typeof option === "string" ? option.trim() : ""))
+        .filter((option: string) => option.length > 0)
+    : [];
+
   try {
     const item = await createMenuItem({
       categoryId: body.categoryId,
@@ -33,6 +39,7 @@ export async function POST(request: Request) {
       isPopular: Boolean(body.isPopular),
       photoUrl: body.photoUrl ?? "",
       isAvailable: body.isAvailable ?? true,
+      sauceOptions,
     });
 
     return NextResponse.json({ item });

@@ -89,6 +89,7 @@ export default function CheckoutPage() {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
+            sauce: item.sauce,
           })),
           totalPrice,
           paymentMethod,
@@ -123,9 +124,13 @@ export default function CheckoutPage() {
 
       <ul className="mt-6 divide-y divide-black/5 rounded-xl2 border border-black/5 bg-white px-4">
         {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between py-3 text-sm">
+          <li
+            key={`${item.id}::${item.sauce ?? ""}`}
+            className="flex items-center justify-between py-3 text-sm"
+          >
             <span className="text-ink/70">
-              {item.name} × {item.quantity}
+              {item.name}
+              {item.sauce ? ` (соус: ${item.sauce})` : ""} × {item.quantity}
             </span>
             <span className="font-medium text-ink">
               {item.price * item.quantity} ₽

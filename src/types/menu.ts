@@ -14,4 +14,5 @@ export type MenuItem = {
   isPopular?: boolean;
   photoUrl?: string;
   isAvailable?: boolean;
+  sauceOptions?: string[];
 };
