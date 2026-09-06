@@ -4,6 +4,7 @@ import { saveOrder } from "@/lib/orders";
 import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isBlank, isValidPhone } from "@/lib/validation";
+import { checkDeliveryZone } from "@/lib/deliveryZone";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as OrderPayload;
@@ -35,6 +36,19 @@ export async function POST(request: Request) {
     typeof payload.lon === "number" &&
     Number.isFinite(payload.lat) &&
     Number.isFinite(payload.lon);
+
+  // Проверяем зону доставки только когда есть координаты (клиент подтвердил
+  // точку на карте) — если геокодирование было недоступно и пришёл только
+  // текстовый адрес, не блокируем заказ: оператор уточнит адрес по телефону.
+  if (hasValidCoords) {
+    const zoneCheck = checkDeliveryZone(
+      { lat: payload.lat as number, lon: payload.lon as number },
+      payload.address,
+    );
+    if (!zoneCheck.ok) {
+      return NextResponse.json({ error: zoneCheck.reason }, { status: 400 });
+    }
+  }
 
   const id = crypto.randomUUID().slice(0, 8);
 
