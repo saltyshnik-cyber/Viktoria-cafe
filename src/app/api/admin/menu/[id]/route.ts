@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateMenuItem, deleteMenuItem, parseComposition } from "@/lib/menu-store";
+import { updateMenuItem, deleteMenuItem, parseComposition, parseStringArray } from "@/lib/menu-store";
 
 export async function PATCH(
   request: Request,
@@ -27,13 +27,9 @@ export async function PATCH(
     price = parsed;
   }
 
-  const sauceOptions: string[] = Array.isArray(body.sauceOptions)
-    ? body.sauceOptions
-        .map((option: unknown) => (typeof option === "string" ? option.trim() : ""))
-        .filter((option: string) => option.length > 0)
-    : [];
-
+  const sauceOptions = parseStringArray(body.sauceOptions);
   const composition = parseComposition(body.composition);
+  const galleryPhotos = parseStringArray(body.galleryPhotos);
 
   try {
     const item = await updateMenuItem(id, {
@@ -47,6 +43,7 @@ export async function PATCH(
       isAvailable: body.isAvailable ?? true,
       sauceOptions,
       composition,
+      galleryPhotos,
     });
 
     if (!item) {

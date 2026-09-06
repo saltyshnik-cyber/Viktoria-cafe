@@ -22,4 +22,5 @@ export type MenuItem = {
   isAvailable?: boolean;
   sauceOptions?: string[];
   composition?: ComboComponent[];
+  galleryPhotos?: string[];
 };

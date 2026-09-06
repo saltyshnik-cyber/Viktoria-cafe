@@ -1,6 +1,13 @@
 import type { ComboComponent, MenuItem } from "@/types/menu";
 import { sql, ensureSchema } from "@/lib/db";
 
+export function parseStringArray(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter((entry) => entry.length > 0);
+}
+
 export function parseComposition(input: unknown): ComboComponent[] {
   if (!Array.isArray(input)) return [];
   return input
@@ -370,6 +377,7 @@ type MenuItemRow = {
   is_available: boolean;
   sauce_options: string[] | null;
   composition: MenuItem["composition"] | null;
+  gallery_photos: string[] | null;
 };
 
 function rowToItem(row: MenuItemRow): MenuItem {
@@ -385,6 +393,8 @@ function rowToItem(row: MenuItemRow): MenuItem {
     isAvailable: row.is_available,
     sauceOptions: row.sauce_options && row.sauce_options.length > 0 ? row.sauce_options : undefined,
     composition: row.composition && row.composition.length > 0 ? row.composition : undefined,
+    galleryPhotos:
+      row.gallery_photos && row.gallery_photos.length > 0 ? row.gallery_photos : undefined,
   };
 }
 
@@ -441,8 +451,8 @@ export async function createMenuItem(data: Omit<MenuItem, "id">): Promise<MenuIt
   await ready();
   const id = crypto.randomUUID().slice(0, 8);
   await sql`
-    INSERT INTO menu_items (id, category_id, name, description, weight, price, is_popular, photo_url, is_available, sauce_options, composition)
-    VALUES (${id}, ${data.categoryId}, ${data.name}, ${data.description}, ${data.weight}, ${data.price ?? null}, ${data.isPopular ?? false}, ${data.photoUrl ?? ""}, ${data.isAvailable ?? true}, ${JSON.stringify(data.sauceOptions ?? [])}::jsonb, ${JSON.stringify(data.composition ?? [])}::jsonb)
+    INSERT INTO menu_items (id, category_id, name, description, weight, price, is_popular, photo_url, is_available, sauce_options, composition, gallery_photos)
+    VALUES (${id}, ${data.categoryId}, ${data.name}, ${data.description}, ${data.weight}, ${data.price ?? null}, ${data.isPopular ?? false}, ${data.photoUrl ?? ""}, ${data.isAvailable ?? true}, ${JSON.stringify(data.sauceOptions ?? [])}::jsonb, ${JSON.stringify(data.composition ?? [])}::jsonb, ${JSON.stringify(data.galleryPhotos ?? [])}::jsonb)
   `;
   return { ...data, id };
 }
@@ -458,7 +468,8 @@ export async function updateMenuItem(
         weight = ${data.weight}, price = ${data.price ?? null}, is_popular = ${data.isPopular ?? false},
         photo_url = ${data.photoUrl ?? ""}, is_available = ${data.isAvailable ?? true},
         sauce_options = ${JSON.stringify(data.sauceOptions ?? [])}::jsonb,
-        composition = ${JSON.stringify(data.composition ?? [])}::jsonb
+        composition = ${JSON.stringify(data.composition ?? [])}::jsonb,
+        gallery_photos = ${JSON.stringify(data.galleryPhotos ?? [])}::jsonb
     WHERE id = ${id}
     RETURNING id
   `) as { id: string }[];

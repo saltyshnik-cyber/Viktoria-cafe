@@ -21,6 +21,7 @@ type ItemFormState = {
   isAvailable: boolean;
   sauceOptions: string[];
   composition: ComponentFormState[];
+  galleryPhotos: string[];
 };
 
 function emptyForm(categories: MenuCategory[]): ItemFormState {
@@ -35,6 +36,7 @@ function emptyForm(categories: MenuCategory[]): ItemFormState {
     isAvailable: true,
     sauceOptions: [],
     composition: [],
+    galleryPhotos: [],
   };
 }
 
@@ -54,6 +56,7 @@ function itemToForm(item: MenuItem): ItemFormState {
       quantity: String(c.quantity),
       menuItemId: c.menuItemId,
     })),
+    galleryPhotos: item.galleryPhotos ?? [],
   };
 }
 
@@ -106,6 +109,71 @@ function PhotoPicker({
         </label>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </div>
+    </div>
+  );
+}
+
+function GalleryPhotosPicker({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadPhoto(file);
+      onChange([...value, url]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось загрузить фото");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <span className="mb-1 block text-sm font-medium text-ink/70">
+        Дополнительные фото (необязательно)
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {value.map((url, index) => (
+          <div
+            key={index}
+            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10"
+          >
+            <img src={url} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onChange(value.filter((_, i) => i !== index))}
+              aria-label="Удалить фото"
+              className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <label className="flex h-16 w-16 shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-black/20 text-center text-xs text-ink/50 hover:border-primary hover:text-primary">
+          {uploading ? "…" : "+ фото"}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploading}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
@@ -195,6 +263,10 @@ function ItemForm({
             min="0"
             placeholder="Цена, ₽ (можно дозаполнить позже)"
             className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+          />
+          <GalleryPhotosPicker
+            value={value.galleryPhotos}
+            onChange={(galleryPhotos) => onChange({ ...value, galleryPhotos })}
           />
         </div>
       </div>
@@ -375,6 +447,7 @@ export default function AdminMenuManager({
           menuItemId: c.menuItemId,
         }))
         .filter((c) => c.name.length > 0),
+      galleryPhotos: form.galleryPhotos.filter((url) => url.trim().length > 0),
     };
   }
 
@@ -576,6 +649,11 @@ export default function AdminMenuManager({
                               {item.composition
                                 .map((c) => (c.quantity > 1 ? `${c.name} × ${c.quantity}` : c.name))
                                 .join(", ")}
+                            </div>
+                          )}
+                          {item.galleryPhotos && item.galleryPhotos.length > 0 && (
+                            <div className="mt-1 text-sm text-ink/50">
+                              Доп. фото: {item.galleryPhotos.length}
                             </div>
                           )}
                         </div>

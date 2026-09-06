@@ -32,6 +32,7 @@ export function ensureSchema(): Promise<void> {
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_available BOOLEAN NOT NULL DEFAULT TRUE`;
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS sauce_options JSONB NOT NULL DEFAULT '[]'::jsonb`;
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS composition JSONB NOT NULL DEFAULT '[]'::jsonb`;
+      await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS gallery_photos JSONB NOT NULL DEFAULT '[]'::jsonb`;
       // Цена теперь необязательна при создании — можно быстро занести
       // блюдо по названию и категории, дозаполнив остальное позже.
       await sql`ALTER TABLE menu_items ALTER COLUMN price DROP NOT NULL`;
