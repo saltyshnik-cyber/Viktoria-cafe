@@ -47,3 +47,38 @@ body {
     display: none;
   }
 }
+
+/* Чек заказа для термопринтера Xprinter 58мм — скрыт на экране,
+   печатается через window.print() только когда отмечен .print-target
+   (см. PrintReceiptButton). Ширина и шрифт подобраны под 58мм ленту. */
+.receipt {
+  display: none;
+}
+
+@page {
+  size: 58mm auto;
+  margin: 2mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt.print-target,
+  .receipt.print-target * {
+    visibility: visible;
+  }
+
+  .receipt.print-target {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+  }
+}

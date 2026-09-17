@@ -1,12 +1,16 @@
 import { getAllOrders } from "@/lib/orders";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
 import { yandexMapPinUrl } from "@/lib/mapsLink";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
+import PrintReceiptButton from "@/components/admin/PrintReceiptButton";
+import OrderReceipt from "@/components/admin/OrderReceipt";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
-  const orders = await getAllOrders();
+  const [orders, settings] = await Promise.all([getAllOrders(), getSiteSettings()]);
+  const cafeName = `Кафе «${settings.heroTitle}»`;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -30,7 +34,10 @@ export default async function AdminOrdersPage() {
                     {new Date(order.createdAt).toLocaleString("ru-RU")}
                   </div>
                 </div>
-                <OrderStatusSelect orderId={order.id} status={order.status} />
+                <div className="flex items-center gap-3">
+                  <PrintReceiptButton orderId={order.id} />
+                  <OrderStatusSelect orderId={order.id} status={order.status} />
+                </div>
               </div>
 
               <div className="mt-3 grid gap-1 text-sm text-ink/70 sm:grid-cols-2">
@@ -77,6 +84,13 @@ export default async function AdminOrdersPage() {
                   {order.totalPrice} ₽
                 </span>
               </div>
+
+              <OrderReceipt
+                order={order}
+                cafeName={cafeName}
+                cafeAddress={settings.address}
+                cafePhone={settings.phone}
+              />
             </div>
           ))}
         </div>
