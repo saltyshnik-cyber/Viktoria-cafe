@@ -16,8 +16,9 @@ export default function PrintReceiptButton({ orderId }: { orderId: string }) {
     <button
       type="button"
       onClick={handlePrint}
-      className="text-sm text-ink/50 hover:text-primary"
+      className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-cream transition hover:bg-primary-dark"
     >
+      <span aria-hidden="true">🖨️</span>
       Печать
     </button>
   );
