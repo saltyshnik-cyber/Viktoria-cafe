@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { Order, OrderPayload } from "@/types/order";
 import { saveOrder } from "@/lib/orders";
 import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
-import { notifyNewOrder } from "@/lib/telegram";
+import { notifyNewOrder } from "@/lib/email";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
 

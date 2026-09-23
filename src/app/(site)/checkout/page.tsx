@@ -30,7 +30,9 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<DeliveryLocation | null>(null);
   const [comment, setComment] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  // Онлайн-оплата картой (ЮKassa) временно скрыта с витрины — код интеграции
+  // сохранён, чтобы вернуть вариант "card" в форму, достаточно снова показать его ниже.
+  const [paymentMethod] = useState<PaymentMethod>("cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -327,41 +329,9 @@ export default function CheckoutPage() {
           <span className="mb-1 block text-sm font-medium text-ink/70">
             Способ оплаты
           </span>
-          <div className="grid grid-cols-2 gap-3">
-            <label
-              className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition ${
-                paymentMethod === "card"
-                  ? "border-primary bg-primary/5 text-ink"
-                  : "border-black/10 text-ink/60"
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="card"
-                checked={paymentMethod === "card"}
-                onChange={() => setPaymentMethod("card")}
-                className="sr-only"
-              />
-              Онлайн картой
-            </label>
-            <label
-              className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition ${
-                paymentMethod === "cash"
-                  ? "border-primary bg-primary/5 text-ink"
-                  : "border-black/10 text-ink/60"
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="cash"
-                checked={paymentMethod === "cash"}
-                onChange={() => setPaymentMethod("cash")}
-                className="sr-only"
-              />
-              Курьеру при получении
-            </label>
+          <div className="rounded-xl border border-primary bg-primary/5 px-4 py-3 text-sm text-ink">
+            Курьеру при получении
+            <span className="block text-xs text-ink/60">картой или наличными</span>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPayment } from "@/lib/yookassa";
 import { findOrderByPaymentId, updateOrderStatus } from "@/lib/orders";
-import { notifyPaidOrder } from "@/lib/telegram";
+import { notifyPaidOrder } from "@/lib/email";
 
 export async function POST(request: Request) {
   const body = await request.json();

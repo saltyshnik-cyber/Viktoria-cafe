@@ -1,3 +1,6 @@
+// ОТКЛЮЧЕНО: уведомления о заказах теперь уходят на email (см. src/lib/email.ts).
+// Файл сохранён на случай возврата Telegram — чтобы включить, верните импорт
+// из "@/lib/telegram" в api/orders/route.ts и api/yookassa/webhook/route.ts.
 import type { Order } from "@/types/order";
 import { yandexMapPinUrl } from "@/lib/mapsLink";
 
