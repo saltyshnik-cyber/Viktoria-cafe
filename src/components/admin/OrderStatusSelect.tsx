@@ -1,29 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ORDER_STATUSES, STATUS_LABELS } from "@/lib/orderLabels";
 import type { OrderStatus } from "@/types/order";
 
 export default function OrderStatusSelect({
   orderId,
   status,
+  onStatusChange,
 }: {
   orderId: string;
   status: OrderStatus;
+  onStatusChange?: (orderId: string, status: OrderStatus) => void;
 }) {
-  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleChange(next: OrderStatus) {
     setIsSaving(true);
     try {
-      await fetch(`/api/admin/orders/${orderId}`, {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
       });
-      router.refresh();
+      if (response.ok) {
+        onStatusChange?.(orderId, next);
+      }
     } finally {
       setIsSaving(false);
     }
