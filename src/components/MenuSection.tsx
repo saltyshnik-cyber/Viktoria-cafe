@@ -15,9 +15,12 @@ export default function MenuSection({
         {category.name}
       </h2>
 
-      <div className="flex flex-nowrap snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
+      <div className="flex flex-nowrap items-start snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
         {items.map((item) => (
-          <div key={item.id} className="w-44 shrink-0 snap-start sm:w-auto">
+          <div
+            key={item.id}
+            className="w-[85vw] max-w-xs shrink-0 snap-start sm:w-auto sm:max-w-none"
+          >
             <MenuItemCard item={item} />
           </div>
         ))}

@@ -4,6 +4,11 @@ import { useState } from "react";
 import type { MenuItem } from "@/types/menu";
 import AddToCartControl from "@/components/AddToCartControl";
 import MenuItemModal from "@/components/MenuItemModal";
+import {
+  MAX_VISIBLE_COMPONENTS,
+  descriptionDuplicatesComposition,
+  pluralizePositions,
+} from "@/lib/menuDisplay";
 
 export default function MenuItemCard({ item }: { item: MenuItem }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,6 +17,11 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
     return null;
   }
   const price = item.price;
+
+  const composition = item.composition ?? [];
+  const visibleComponents = composition.slice(0, MAX_VISIBLE_COMPONENTS);
+  const hiddenComponentsCount = composition.length - visibleComponents.length;
+  const hideDescription = descriptionDuplicatesComposition(item.description, item.composition);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-gold/20 bg-parchment-light transition hover:shadow-lg hover:shadow-black/30">
@@ -28,7 +38,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
         }}
         className="flex flex-1 cursor-pointer flex-col text-left"
       >
-        <div className="flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-warm text-3xl">
+        <div className="relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-warm text-3xl">
           {item.photoUrl ? (
             <img
               src={item.photoUrl}
@@ -38,23 +48,23 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
           ) : (
             "🍽️"
           )}
+          {item.isPopular && (
+            <span className="absolute left-2 top-2 rounded-full bg-ember px-2 py-0.5 text-[10px] font-semibold text-parchment-light shadow">
+              Хит
+            </span>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-1 p-3 pb-0">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-sm font-semibold text-char">{item.name}</h3>
-            {item.isPopular && (
-              <span className="shrink-0 rounded-full bg-ember/15 px-1.5 py-0.5 text-[10px] font-medium text-ember">
-                Хит
-              </span>
-            )}
-          </div>
+          <h3 className="line-clamp-2 text-sm font-semibold text-char">{item.name}</h3>
 
-          <p className="line-clamp-2 text-xs text-ink/60">{item.description}</p>
+          {!hideDescription && item.description && (
+            <p className="line-clamp-2 text-xs text-ink/60">{item.description}</p>
+          )}
 
-          {item.composition && item.composition.length > 0 && (
+          {visibleComponents.length > 0 && (
             <ul className="list-inside list-disc text-xs text-ink/60">
-              {item.composition.map((component, index) => (
+              {visibleComponents.map((component, index) => (
                 <li key={index}>
                   {component.name}
                   {component.quantity > 1 ? ` × ${component.quantity}` : ""}
@@ -62,10 +72,15 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
               ))}
             </ul>
           )}
+          {hiddenComponentsCount > 0 && (
+            <p className="text-xs font-medium text-ember">
+              + ещё {hiddenComponentsCount} {pluralizePositions(hiddenComponentsCount)}
+            </p>
+          )}
 
           <div className="mt-auto flex items-center pt-2">
             {item.weight && <span className="text-xs text-ink/50">{item.weight}</span>}
-            <span className="ml-auto font-semibold text-char">{price} ₽</span>
+            <span className="ml-auto text-lg font-bold text-char">{price} ₽</span>
           </div>
         </div>
       </div>
