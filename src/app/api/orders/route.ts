@@ -5,9 +5,14 @@ import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/email";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
+import { isWithinBusinessHours, CLOSED_ORDER_MESSAGE } from "@/lib/businessHours";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as OrderPayload;
+
+  if (!isWithinBusinessHours()) {
+    return NextResponse.json({ error: CLOSED_ORDER_MESSAGE }, { status: 403 });
+  }
 
   if (isBlank(payload.name)) {
     return NextResponse.json({ error: "Введите имя" }, { status: 400 });

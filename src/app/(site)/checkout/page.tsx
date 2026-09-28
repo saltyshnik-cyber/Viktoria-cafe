@@ -14,6 +14,9 @@ import { geocodeAddress } from "@/lib/yandexGeocoder";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
 
 const ADDRESS_GEOCODE_DEBOUNCE_MS = 900;
+// Перепроверяем часы работы раз в минуту, пока клиент сидит на странице —
+// чтобы кнопка сама разблокировалась/заблокировалась на границе 12:00/00:00.
+const BUSINESS_HOURS_POLL_MS = 60_000;
 
 type FieldErrors = {
   name?: string;
@@ -36,6 +39,11 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // null, пока не пришёл первый ответ сервера — до этого не блокируем кнопку,
+  // чтобы не мигать сообщением "не работаем" на каждой загрузке страницы.
+  const [closedMessage, setClosedMessage] = useState<string | null>(null);
+  const [hasCheckedBusinessHours, setHasCheckedBusinessHours] = useState(false);
+  const isClosed = hasCheckedBusinessHours && closedMessage !== null;
 
   // Зону доставки можно проверить только когда есть координаты (клиент
   // подтвердил точку на карте) — если геокодирование недоступно и есть
@@ -80,6 +88,31 @@ export default function CheckoutPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkBusinessHours() {
+      try {
+        const response = await fetch("/api/business-hours");
+        const data = await response.json();
+        if (cancelled) return;
+        setClosedMessage(data.open ? null : data.message);
+      } catch {
+        // Сеть недоступна — не блокируем оформление из-за этого; финальную
+        // проверку всё равно сделает сервер при отправке заказа.
+      } finally {
+        if (!cancelled) setHasCheckedBusinessHours(true);
+      }
+    }
+
+    void checkBusinessHours();
+    const interval = setInterval(checkBusinessHours, BUSINESS_HOURS_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   function handleAddressBlur() {
     if (forwardGeocodeTimerRef.current) {
@@ -133,6 +166,11 @@ export default function CheckoutPage() {
     const errors = validate();
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    if (isClosed && closedMessage) {
+      setError(closedMessage);
       return;
     }
 
@@ -335,6 +373,12 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        {isClosed && (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            {closedMessage}
+          </p>
+        )}
+
         {error && (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
@@ -343,16 +387,18 @@ export default function CheckoutPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting || isOutOfDeliveryZone}
+          disabled={isSubmitting || isOutOfDeliveryZone || isClosed}
           className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-cream transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSubmitting
             ? "Отправляем..."
-            : isOutOfDeliveryZone
-              ? "Адрес вне зоны доставки"
-              : paymentMethod === "card"
-                ? `Оплатить ${totalPrice} ₽`
-                : `Подтвердить заказ на ${totalPrice} ₽`}
+            : isClosed
+              ? "Сейчас не работаем"
+              : isOutOfDeliveryZone
+                ? "Адрес вне зоны доставки"
+                : paymentMethod === "card"
+                  ? `Оплатить ${totalPrice} ₽`
+                  : `Подтвердить заказ на ${totalPrice} ₽`}
         </button>
       </form>
     </div>
