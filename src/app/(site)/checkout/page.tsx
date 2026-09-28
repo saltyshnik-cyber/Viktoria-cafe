@@ -29,7 +29,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
 
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+7");
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<DeliveryLocation | null>(null);
   const [comment, setComment] = useState("");
@@ -113,6 +113,16 @@ export default function CheckoutPage() {
       clearInterval(interval);
     };
   }, []);
+
+  function handlePhoneChange(raw: string) {
+    // "+7" — несъёмный префикс: оставляем только цифры, введённые после
+    // него, отбрасывая случайно напечатанную лишнюю "7" в начале.
+    let digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("7")) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    setPhone(`+7${digits}`);
+    if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+  }
 
   function handleAddressBlur() {
     if (forwardGeocodeTimerRef.current) {
@@ -284,15 +294,25 @@ export default function CheckoutPage() {
             type="tel"
             required
             value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              if (fieldErrors.phone) setFieldErrors({ ...fieldErrors, phone: undefined });
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            onKeyDown={(e) => {
+              const el = e.currentTarget;
+              // Не даём стереть "+7" бэкспейсом/делитом, когда курсор внутри префикса.
+              if (
+                (e.key === "Backspace" || e.key === "Delete") &&
+                el.selectionStart !== null &&
+                el.selectionEnd !== null &&
+                el.selectionStart <= 2 &&
+                el.selectionEnd <= 2
+              ) {
+                e.preventDefault();
+              }
             }}
             aria-invalid={Boolean(fieldErrors.phone)}
             className={`w-full rounded-xl border bg-white px-4 py-2 text-ink outline-none focus:border-primary ${
               fieldErrors.phone ? "border-red-400" : "border-black/10"
             }`}
-            placeholder="+7 (___) ___-__-__"
+            placeholder="+7XXXXXXXXXX"
           />
           {fieldErrors.phone && (
             <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
