@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer({
   phone,
   address,
@@ -38,7 +40,10 @@ export default function Footer({
       </div>
 
       <div className="border-t border-parchment/10 py-4 text-center text-xs text-ash">
-        © {new Date().getFullYear()} Кафе «Виктория». Все права защищены.
+        © {new Date().getFullYear()} Кафе «Виктория». Все права защищены.{" "}
+        <Link href="/privacy" className="underline hover:text-parchment">
+          Политика конфиденциальности
+        </Link>
       </div>
     </footer>
   );

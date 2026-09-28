@@ -8,10 +8,19 @@ import { checkDeliveryZone } from "@/lib/deliveryZone";
 import { isWithinBusinessHours, CLOSED_ORDER_MESSAGE } from "@/lib/businessHours";
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as OrderPayload;
+  const { consent, ...payload } = (await request.json()) as OrderPayload & {
+    consent?: boolean;
+  };
 
   if (!isWithinBusinessHours()) {
     return NextResponse.json({ error: CLOSED_ORDER_MESSAGE }, { status: 403 });
+  }
+
+  if (consent !== true) {
+    return NextResponse.json(
+      { error: "Нужно согласие на обработку персональных данных" },
+      { status: 400 },
+    );
   }
 
   if (isBlank(payload.name)) {

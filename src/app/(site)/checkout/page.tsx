@@ -22,6 +22,7 @@ type FieldErrors = {
   name?: string;
   phone?: string;
   address?: string;
+  consent?: string;
 };
 
 export default function CheckoutPage() {
@@ -33,6 +34,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<DeliveryLocation | null>(null);
   const [comment, setComment] = useState("");
+  const [consentGiven, setConsentGiven] = useState(false);
   // Онлайн-оплата картой (ЮKassa) временно скрыта с витрины — код интеграции
   // сохранён, чтобы вернуть вариант "card" в форму, достаточно снова показать его ниже.
   const [paymentMethod] = useState<PaymentMethod>("cash");
@@ -149,6 +151,10 @@ export default function CheckoutPage() {
       errors.address = "Введите адрес доставки";
     }
 
+    if (!consentGiven) {
+      errors.consent = "Нужно согласие на обработку персональных данных";
+    }
+
     return errors;
   }
 
@@ -211,6 +217,7 @@ export default function CheckoutPage() {
           })),
           totalPrice,
           paymentMethod,
+          consent: consentGiven,
         }),
       });
 
@@ -391,6 +398,30 @@ export default function CheckoutPage() {
             Курьеру при получении
             <span className="block text-xs text-ink/60">картой или наличными</span>
           </div>
+        </div>
+
+        <div>
+          <label className="flex items-start gap-2 text-sm text-ink/70">
+            <input
+              type="checkbox"
+              checked={consentGiven}
+              onChange={(e) => {
+                setConsentGiven(e.target.checked);
+                if (fieldErrors.consent) setFieldErrors({ ...fieldErrors, consent: undefined });
+              }}
+              aria-invalid={Boolean(fieldErrors.consent)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span>
+              Согласен на обработку персональных данных в соответствии с{" "}
+              <Link href="/privacy" target="_blank" className="text-primary hover:underline">
+                политикой конфиденциальности
+              </Link>
+            </span>
+          </label>
+          {fieldErrors.consent && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.consent}</p>
+          )}
         </div>
 
         {isClosed && (
