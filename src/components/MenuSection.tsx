@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { MenuCategory, MenuItem } from "@/types/menu";
 import MenuItemCard from "@/components/MenuItemCard";
 
@@ -8,6 +11,10 @@ export default function MenuSection({
   category: MenuCategory;
   items: MenuItem[];
 }) {
+  // Раскрытой может быть только одна карточка состава в пределах категории —
+  // при раскрытии другой предыдущая сворачивается сама.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   return (
     <section id={category.id} className="min-w-0 scroll-mt-32 py-8">
       <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-parchment-light">
@@ -21,7 +28,13 @@ export default function MenuSection({
             key={item.id}
             className="w-[85vw] max-w-xs shrink-0 snap-start sm:w-auto sm:max-w-none"
           >
-            <MenuItemCard item={item} />
+            <MenuItemCard
+              item={item}
+              isCompositionExpanded={expandedId === item.id}
+              onToggleComposition={() =>
+                setExpandedId((current) => (current === item.id ? null : item.id))
+              }
+            />
           </div>
         ))}
       </div>

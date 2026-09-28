@@ -1,17 +1,9 @@
 import type { ComboComponent } from "@/types/menu";
 
-// Сколько позиций состава показываем на карточке в списке — остальное
-// сворачивается в строку "+ ещё N позиций" (полный список — в модалке).
-export const MAX_VISIBLE_COMPONENTS = 4;
-
-export function pluralizePositions(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return "позиций";
-  if (mod10 === 1) return "позиция";
-  if (mod10 >= 2 && mod10 <= 4) return "позиции";
-  return "позиций";
-}
+// Сколько позиций состава показываем в свёрнутом превью на карточке —
+// остальное раскрывается по стрелке "Состав" (полный список — там же и в
+// модалке).
+export const MAX_PREVIEW_COMPONENTS = 3;
 
 /**
  * Грубая эвристика: описание просто пересказывает состав (например,

@@ -53,32 +53,37 @@ export default function AddToCartControl({
 
   return (
     <div>
-      {hasSauceOptions && (
-        <div>
-          <span className="text-xs font-medium text-ink/70">
-            Соус <span className="text-red-500">*</span>
-          </span>
-          <select
-            ref={selectRef}
-            value={sauce}
-            onChange={(e) => {
-              setSauce(e.target.value);
-              if (e.target.value) setShowSauceHint(false);
-            }}
-            className={selectClassName}
-          >
-            <option value="">Выберите соус</option>
-            {item.sauceOptions!.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          {showSauceHint && (
-            <p className="mt-1 text-xs font-medium text-red-500">Выберите соус</p>
-          )}
-        </div>
-      )}
+      {/* На карточке в списке (size="sm") этот блок держит одинаковую
+          минимальную высоту независимо от наличия соуса — иначе кнопка
+          "В корзину" оказывалась бы на разных уровнях у разных карточек. */}
+      <div className={size === "sm" ? "min-h-[60px]" : undefined}>
+        {hasSauceOptions && (
+          <div>
+            <span className="text-xs font-medium text-ink/70">
+              Соус <span className="text-red-500">*</span>
+            </span>
+            <select
+              ref={selectRef}
+              value={sauce}
+              onChange={(e) => {
+                setSauce(e.target.value);
+                if (e.target.value) setShowSauceHint(false);
+              }}
+              className={selectClassName}
+            >
+              <option value="">Выберите соус</option>
+              {item.sauceOptions!.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            {showSauceHint && (
+              <p className="mt-1 text-xs font-medium text-red-500">Выберите соус</p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="mt-2">
         {quantity === 0 ? (
