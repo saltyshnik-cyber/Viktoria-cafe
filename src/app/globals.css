@@ -77,8 +77,37 @@ body {
     top: 0;
     width: 58mm;
     font-family: "Courier New", "Consolas", monospace;
-    font-size: 12px;
-    line-height: 1.4;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.5;
     color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Толстая чёрная линия-разделитель вместо тонкого текстового пунктира —
+     хорошо пропечатывается на термоленте и не зависит от числа символов
+     в строке (~24-26 на этой ширине при данном кегле). */
+  .receipt.print-target .receipt-divider {
+    border: none;
+    border-top: 3px solid #000;
+    margin: 6px 0;
+    height: 0;
+  }
+
+  .receipt.print-target .receipt-title {
+    font-size: 19px;
+  }
+
+  .receipt.print-target .receipt-item {
+    margin-bottom: 4px;
+  }
+
+  .receipt.print-target .receipt-item-name {
+    font-size: 17px;
+  }
+
+  .receipt.print-target .receipt-total {
+    font-size: 22px;
   }
 }
