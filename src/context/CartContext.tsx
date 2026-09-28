@@ -34,23 +34,26 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "victoria-cafe-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  // Ленивый инициализатор читает localStorage синхронно при монтировании —
+  // без отдельного эффекта "гидратации", который раньше вызывал setState
+  // прямо в эффекте (react-hooks/set-state-in-effect).
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setItems(JSON.parse(stored));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch {
-      // corrupted storage, ignore and start with an empty cart
+      // localStorage недоступен — корзина просто не сохранится между визитами
     }
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items, isHydrated]);
+  }, [items]);
 
   const addItem: CartContextValue["addItem"] = (item) => {
     setItems((current) => {
