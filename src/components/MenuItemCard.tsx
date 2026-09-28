@@ -75,14 +75,17 @@ export default function MenuItemCard({
               ))}
             </ul>
 
-            <div className="h-6">
+            <div className="my-1 min-h-[44px]">
               {canExpandComposition && (
                 <button
                   type="button"
                   onClick={onToggleComposition}
-                  className="text-xs font-medium text-ember hover:underline"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full border border-ember px-4 text-sm font-bold text-ember transition hover:bg-ember/10"
                 >
-                  {isCompositionExpanded ? "▴ Свернуть" : "▾ Состав"}
+                  <span>{isCompositionExpanded ? "Свернуть" : "Состав"}</span>
+                  <span className="text-base leading-none">
+                    {isCompositionExpanded ? "▴" : "▾"}
+                  </span>
                 </button>
               )}
             </div>
