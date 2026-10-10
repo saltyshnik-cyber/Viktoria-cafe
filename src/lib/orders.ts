@@ -12,6 +12,7 @@ type OrderRow = {
   items: Order["items"];
   total_price: number;
   payment_method: Order["paymentMethod"];
+  delivery_type: string;
   status: OrderStatus;
   payment_id: string | null;
   created_at: string | Date;
@@ -29,6 +30,7 @@ function rowToOrder(row: OrderRow): Order {
     items: row.items,
     totalPrice: row.total_price,
     paymentMethod: row.payment_method,
+    deliveryType: row.delivery_type === "pickup" ? "pickup" : "delivery",
     status: row.status,
     paymentId: row.payment_id ?? undefined,
     createdAt:
@@ -41,11 +43,11 @@ function rowToOrder(row: OrderRow): Order {
 export async function saveOrder(order: Order): Promise<void> {
   await ensureSchema();
   await sql`
-    INSERT INTO orders (id, name, phone, address, lat, lon, comment, items, total_price, payment_method, status, payment_id, created_at)
+    INSERT INTO orders (id, name, phone, address, lat, lon, comment, items, total_price, payment_method, delivery_type, status, payment_id, created_at)
     VALUES (
       ${order.id}, ${order.name}, ${order.phone}, ${order.address}, ${order.lat ?? null}, ${order.lon ?? null},
       ${order.comment ?? null}, ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.paymentMethod},
-      ${order.status}, ${order.paymentId ?? null}, ${order.createdAt}
+      ${order.deliveryType}, ${order.status}, ${order.paymentId ?? null}, ${order.createdAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -57,6 +59,7 @@ export async function saveOrder(order: Order): Promise<void> {
       items = EXCLUDED.items,
       total_price = EXCLUDED.total_price,
       payment_method = EXCLUDED.payment_method,
+      delivery_type = EXCLUDED.delivery_type,
       status = EXCLUDED.status,
       payment_id = EXCLUDED.payment_id
   `;

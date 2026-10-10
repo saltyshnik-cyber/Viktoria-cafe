@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Order, OrderStatus } from "@/types/order";
-import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
+import { DELIVERY_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
 import { yandexMapPinUrl } from "@/lib/mapsLink";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/orderNotificationSound";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
@@ -192,8 +192,18 @@ export default function AdminOrdersView({
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="font-semibold text-ink">
+                  <div className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                     Заказ №{order.id}
+                    <span
+                      className={`rounded-full border px-3 py-0.5 text-sm font-bold ${
+                        order.deliveryType === "pickup"
+                          ? "border-amber-400 bg-amber-100 text-amber-900"
+                          : "border-sky-400 bg-sky-100 text-sky-900"
+                      }`}
+                    >
+                      {order.deliveryType === "pickup" ? "🏃" : "🚚"}{" "}
+                      {DELIVERY_TYPE_LABELS[order.deliveryType]}
+                    </span>
                   </div>
                   <div className="text-sm text-ink/50">
                     {new Date(order.createdAt).toLocaleString("ru-RU")}
@@ -213,19 +223,21 @@ export default function AdminOrdersView({
                 <div>
                   {order.name} · {order.phone}
                 </div>
-                <div>
-                  {order.address}
-                  {order.lat != null && order.lon != null && (
-                    <a
-                      href={yandexMapPinUrl(order.lat, order.lon)}
-                      target="_blank"
-                      rel="noopener"
-                      className="ml-2 text-primary hover:underline"
-                    >
-                      Точка на карте →
-                    </a>
-                  )}
-                </div>
+                {order.deliveryType === "delivery" && (
+                  <div>
+                    {order.address}
+                    {order.lat != null && order.lon != null && (
+                      <a
+                        href={yandexMapPinUrl(order.lat, order.lon)}
+                        target="_blank"
+                        rel="noopener"
+                        className="ml-2 text-primary hover:underline"
+                      >
+                        Точка на карте →
+                      </a>
+                    )}
+                  </div>
+                )}
                 {order.comment && (
                   <div className="sm:col-span-2">
                     Комментарий: {order.comment}

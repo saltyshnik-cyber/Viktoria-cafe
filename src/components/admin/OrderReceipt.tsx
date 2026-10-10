@@ -1,4 +1,4 @@
-import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
+import { DELIVERY_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
 import type { Order } from "@/types/order";
 
 function ReceiptDivider() {
@@ -29,7 +29,12 @@ export default function OrderReceipt({
       <ReceiptDivider />
       <div>Клиент: {order.name}</div>
       <div>Тел: {order.phone}</div>
-      {order.address && <div>Адрес: {order.address}</div>}
+      <div className="receipt-item-name">
+        {DELIVERY_TYPE_LABELS[order.deliveryType].toUpperCase()}
+      </div>
+      {order.deliveryType === "delivery" && order.address && (
+        <div>Адрес: {order.address}</div>
+      )}
       {order.comment && <div>Комментарий: {order.comment}</div>}
 
       <ReceiptDivider />

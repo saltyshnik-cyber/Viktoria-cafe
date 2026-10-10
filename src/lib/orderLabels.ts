@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentMethod } from "@/types/order";
+import type { DeliveryType, OrderStatus, PaymentMethod } from "@/types/order";
 
 export const ORDER_STATUSES: OrderStatus[] = [
   "new",
@@ -18,6 +18,11 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   delivering: "В пути",
   completed: "Выполнен",
   cancelled: "Отменён",
+};
+
+export const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = {
+  delivery: "Доставка",
+  pickup: "Самовывоз",
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

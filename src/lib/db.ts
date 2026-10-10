@@ -55,6 +55,9 @@ export function ensureSchema(): Promise<void> {
       `;
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION`;
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS lon DOUBLE PRECISION`;
+      // Все заказы, созданные до появления самовывоза, были доставкой — DEFAULT
+      // проставляет это существующим строкам, сами строки не меняются.
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_type TEXT NOT NULL DEFAULT 'delivery'`;
       await sql`
         CREATE TABLE IF NOT EXISTS categories (
           id TEXT PRIMARY KEY,

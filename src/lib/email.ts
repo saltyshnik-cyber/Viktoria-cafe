@@ -1,5 +1,5 @@
 import type { Order } from "@/types/order";
-import { PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
+import { DELIVERY_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/orderLabels";
 import { yandexMapPinUrl } from "@/lib/mapsLink";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
@@ -33,6 +33,8 @@ function formatOrderEmail(order: Order, title: string): { subject: string; html:
     timeZone: "Asia/Krasnoyarsk",
   });
   const paymentLabel = PAYMENT_METHOD_LABELS[order.paymentMethod];
+  const deliveryLabel = DELIVERY_TYPE_LABELS[order.deliveryType];
+  const isPickup = order.deliveryType === "pickup";
   const mapUrl =
     order.lat != null && order.lon != null ? yandexMapPinUrl(order.lat, order.lon) : undefined;
 
@@ -50,7 +52,8 @@ function formatOrderEmail(order: Order, title: string): { subject: string; html:
     "",
     `Имя: ${order.name}`,
     `Телефон: ${order.phone}`,
-    `Адрес: ${order.address}`,
+    `Получение: ${deliveryLabel}`,
+    isPickup ? undefined : `Адрес: ${order.address}`,
     mapUrl ? `Точка на карте: ${mapUrl}` : undefined,
     order.comment ? `Комментарий: ${order.comment}` : undefined,
   ]
@@ -68,9 +71,14 @@ function formatOrderEmail(order: Order, title: string): { subject: string; html:
   <div style="margin-bottom:16px">Оплата: ${escapeHtml(paymentLabel)}</div>
   <div><b>Имя:</b> ${escapeHtml(order.name)}</div>
   <div><b>Телефон:</b> <a href="tel:${escapeHtml(order.phone)}">${escapeHtml(order.phone)}</a></div>
-  <div><b>Адрес:</b> ${escapeHtml(order.address)}${
-    mapUrl ? ` — <a href="${escapeHtml(mapUrl)}">точка на карте</a>` : ""
-  }</div>
+  <div><b>Получение:</b> ${escapeHtml(deliveryLabel)}</div>
+  ${
+    isPickup
+      ? ""
+      : `<div><b>Адрес:</b> ${escapeHtml(order.address)}${
+          mapUrl ? ` — <a href="${escapeHtml(mapUrl)}">точка на карте</a>` : ""
+        }</div>`
+  }
   ${order.comment ? `<div><b>Комментарий:</b> ${escapeHtml(order.comment)}</div>` : ""}
 </div>`.trim();
 

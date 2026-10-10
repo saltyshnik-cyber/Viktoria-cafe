@@ -66,7 +66,7 @@ function formatOrderMessage(order: Order, title: string): string {
     "",
     `Имя: ${order.name}`,
     `Телефон: ${order.phone}`,
-    `Адрес: ${order.address}`,
+    order.deliveryType === "pickup" ? "Получение: Самовывоз" : `Адрес: ${order.address}`,
     order.lat != null && order.lon != null
       ? `Точка на карте: ${yandexMapPinUrl(order.lat, order.lon)}`
       : undefined,

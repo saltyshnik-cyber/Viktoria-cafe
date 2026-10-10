@@ -8,7 +8,8 @@ import { checkDeliveryZone } from "@/lib/deliveryZone";
 import { isWithinBusinessHours, CLOSED_ORDER_MESSAGE } from "@/lib/businessHours";
 
 export async function POST(request: Request) {
-  const { consent, ...payload } = (await request.json()) as OrderPayload & {
+  const { consent, ...payload } = (await request.json()) as Omit<OrderPayload, "deliveryType"> & {
+    deliveryType?: unknown;
     consent?: boolean;
   };
 
@@ -34,7 +35,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (isBlank(payload.address)) {
+  // Вкладка, открытая до выхода самовывоза, deliveryType не присылает — это доставка.
+  const deliveryType = payload.deliveryType ?? "delivery";
+  if (deliveryType !== "delivery" && deliveryType !== "pickup") {
+    return NextResponse.json({ error: "Неверный способ получения заказа" }, { status: 400 });
+  }
+  const isPickup = deliveryType === "pickup";
+
+  if (!isPickup && isBlank(payload.address)) {
     return NextResponse.json(
       { error: "Введите адрес доставки" },
       { status: 400 },
@@ -46,6 +54,7 @@ export async function POST(request: Request) {
   }
 
   const hasValidCoords =
+    !isPickup &&
     typeof payload.lat === "number" &&
     typeof payload.lon === "number" &&
     Number.isFinite(payload.lat) &&
@@ -68,6 +77,8 @@ export async function POST(request: Request) {
 
   const order: Order = {
     ...payload,
+    deliveryType,
+    address: isPickup ? "" : payload.address,
     lat: hasValidCoords ? payload.lat : undefined,
     lon: hasValidCoords ? payload.lon : undefined,
     id,

@@ -8,6 +8,8 @@ export type OrderItem = {
 
 export type PaymentMethod = "card" | "cash";
 
+export type DeliveryType = "delivery" | "pickup";
+
 export type OrderStatus =
   | "new"
   | "awaiting_payment"
@@ -27,6 +29,7 @@ export type OrderPayload = {
   items: OrderItem[];
   totalPrice: number;
   paymentMethod: PaymentMethod;
+  deliveryType: DeliveryType;
 };
 
 export type Order = OrderPayload & {
