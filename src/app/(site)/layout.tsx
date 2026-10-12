@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { formatWorkingHoursLines } from "@/lib/businessHours";
 
 export default async function SiteLayout({
   children,
@@ -17,7 +18,7 @@ export default async function SiteLayout({
       <Footer
         phone={settings.phone}
         address={settings.address}
-        hours={settings.hours}
+        hoursLines={formatWorkingHoursLines(settings.workingHours)}
         deliveryThreshold={settings.deliveryThreshold}
       />
     </CartProvider>

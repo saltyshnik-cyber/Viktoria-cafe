@@ -1,4 +1,9 @@
 import { ensureSchema, sql } from "@/lib/db";
+import {
+  DEFAULT_WORKING_HOURS,
+  validateWorkingHours,
+  type WorkingHours,
+} from "@/lib/businessHours";
 
 export type SiteSettings = {
   heroTitle: string;
@@ -10,7 +15,7 @@ export type SiteSettings = {
   ratingValue: string;
   ratingCount: string;
   address: string;
-  hours: string;
+  workingHours: WorkingHours;
   phone: string;
   phoneSecondary: string;
   mapsUrl: string;
@@ -35,7 +40,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ratingValue: "4.5",
   ratingCount: "604",
   address: "Площадь Мира, 2а/1, Красноярск",
-  hours: "Ежедневно 11:00–24:00",
+  workingHours: DEFAULT_WORKING_HOURS,
   phone: "+7 923 570-05-88",
   phoneSecondary: "+7 (391) 231-45-15",
   mapsUrl: "https://2gis.ru/krasnoyarsk/geo/70000001026596217/92.896586,56.011237",
@@ -43,8 +48,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   deliveryCost: 0,
 };
 
-// Ключи хранения в site_settings(key, value) — galleryImages сериализуется в JSON,
-// deliveryThreshold/deliveryCost хранятся как строки чисел.
+// Ключи хранения в site_settings(key, value) — galleryImages и workingHours
+// сериализуются в JSON, deliveryThreshold/deliveryCost хранятся как строки чисел.
 const KEY_MAP: Record<keyof SiteSettings, string> = {
   heroTitle: "hero_title",
   heroSubtitle: "hero_subtitle",
@@ -55,7 +60,7 @@ const KEY_MAP: Record<keyof SiteSettings, string> = {
   ratingValue: "rating_value",
   ratingCount: "rating_count",
   address: "address",
-  hours: "hours",
+  workingHours: "working_hours",
   phone: "phone",
   phoneSecondary: "phone_secondary",
   mapsUrl: "maps_url",
@@ -64,6 +69,27 @@ const KEY_MAP: Record<keyof SiteSettings, string> = {
 };
 
 const NUMBER_FIELDS = new Set<keyof SiteSettings>(["deliveryThreshold", "deliveryCost"]);
+
+// Повреждённое или невалидное значение в БД не должно ронять приём заказов —
+// в этом случае действует расписание по умолчанию.
+function parseStoredWorkingHours(raw: string | undefined): WorkingHours {
+  if (raw === undefined) return DEFAULT_WORKING_HOURS;
+  try {
+    const result = validateWorkingHours(JSON.parse(raw));
+    if (result.ok) return result.value;
+  } catch {
+    // повреждённый JSON
+  }
+  return DEFAULT_WORKING_HOURS;
+}
+
+export async function getWorkingHours(): Promise<WorkingHours> {
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT value FROM site_settings WHERE key = ${KEY_MAP.workingHours}
+  `) as { value: string }[];
+  return parseStoredWorkingHours(rows[0]?.value);
+}
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   await ensureSchema();
@@ -84,6 +110,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       } catch {
         // повреждённый JSON — оставляем дефолт
       }
+    } else if (field === "workingHours") {
+      settings.workingHours = parseStoredWorkingHours(raw);
     } else if (NUMBER_FIELDS.has(field)) {
       const num = Number(raw);
       if (!Number.isNaN(num)) {
@@ -100,8 +128,15 @@ export async function saveSiteSettings(partial: Partial<SiteSettings>): Promise<
   await ensureSchema();
   for (const field of Object.keys(partial) as (keyof SiteSettings)[]) {
     const key = KEY_MAP[field];
+    // Поле, которого больше нет (например, прежний текст "hours" из вкладки
+    // админки, открытой до обновления), просто пропускаем.
+    if (!key) continue;
     const value =
-      field === "galleryImages" ? JSON.stringify(partial.galleryImages) : String(partial[field]);
+      field === "galleryImages"
+        ? JSON.stringify(partial.galleryImages)
+        : field === "workingHours"
+          ? JSON.stringify(partial.workingHours)
+          : String(partial[field]);
     await sql`
       INSERT INTO site_settings (key, value) VALUES (${key}, ${value})
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value

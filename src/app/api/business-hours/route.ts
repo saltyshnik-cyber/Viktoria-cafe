@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { isWithinBusinessHours, CLOSED_ORDER_MESSAGE } from "@/lib/businessHours";
+import { getOrderAvailability } from "@/lib/businessHours";
+import { getWorkingHours } from "@/lib/siteSettings";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const open = isWithinBusinessHours();
-  return NextResponse.json({ open, message: open ? null : CLOSED_ORDER_MESSAGE });
+  const { open, message } = getOrderAvailability(await getWorkingHours());
+  return NextResponse.json({ open, message });
 }

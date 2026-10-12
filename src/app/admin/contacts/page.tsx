@@ -15,7 +15,7 @@ export default async function AdminContactsPage() {
       <ContactsForm
         initial={{
           address: settings.address,
-          hours: settings.hours,
+          workingHours: settings.workingHours,
           phone: settings.phone,
           phoneSecondary: settings.phoneSecondary,
           mapsUrl: settings.mapsUrl,

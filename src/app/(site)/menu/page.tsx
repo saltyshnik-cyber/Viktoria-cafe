@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getCategories } from "@/lib/categories";
 import { getAllMenuItems } from "@/lib/menu-store";
+import { getWorkingHours } from "@/lib/siteSettings";
+import { formatWorkingHoursLines } from "@/lib/businessHours";
 import MenuSection from "@/components/MenuSection";
 import CategoryNav from "@/components/CategoryNav";
 
@@ -11,7 +13,11 @@ export const metadata = {
 };
 
 export default async function MenuPage() {
-  const [items, categories] = await Promise.all([getAllMenuItems(), getCategories()]);
+  const [items, categories, workingHours] = await Promise.all([
+    getAllMenuItems(),
+    getCategories(),
+    getWorkingHours(),
+  ]);
 
   return (
     <div className="min-h-screen bg-char">
@@ -27,8 +33,8 @@ export default async function MenuPage() {
             Меню кафе «Виктория»
           </h1>
           <p className="mt-3 max-w-lg text-parchment/70">
-            Шашлык, хачапури и грузинская кухня на углях. Готовим каждый день —
-            с 11:00 до полуночи.
+            Шашлык, хачапури и грузинская кухня на углях. Часы работы:{" "}
+            {formatWorkingHoursLines(workingHours).join(", ")}.
           </p>
         </div>
       </section>

@@ -3,12 +3,12 @@ import Link from "next/link";
 export default function Footer({
   phone,
   address,
-  hours,
+  hoursLines,
   deliveryThreshold,
 }: {
   phone: string;
   address: string;
-  hours: string;
+  hoursLines: string[];
   deliveryThreshold: number;
 }) {
   return (
@@ -27,7 +27,9 @@ export default function Footer({
           <div className="mb-2 font-semibold text-parchment-light">Контакты</div>
           <p>{phone}</p>
           <p>{address}</p>
-          <p>{hours}</p>
+          {hoursLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </div>
 
         <div className="text-sm text-parchment/60">

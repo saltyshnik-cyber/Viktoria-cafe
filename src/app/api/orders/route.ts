@@ -5,7 +5,8 @@ import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/email";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
-import { isWithinBusinessHours, CLOSED_ORDER_MESSAGE } from "@/lib/businessHours";
+import { getOrderAvailability } from "@/lib/businessHours";
+import { getWorkingHours } from "@/lib/siteSettings";
 
 export async function POST(request: Request) {
   const { consent, ...payload } = (await request.json()) as Omit<OrderPayload, "deliveryType"> & {
@@ -13,8 +14,9 @@ export async function POST(request: Request) {
     consent?: boolean;
   };
 
-  if (!isWithinBusinessHours()) {
-    return NextResponse.json({ error: CLOSED_ORDER_MESSAGE }, { status: 403 });
+  const availability = getOrderAvailability(await getWorkingHours());
+  if (!availability.open) {
+    return NextResponse.json({ error: availability.message }, { status: 403 });
   }
 
   if (consent !== true) {

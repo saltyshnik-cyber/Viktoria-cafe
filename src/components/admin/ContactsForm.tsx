@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import type { SiteSettings } from "@/lib/siteSettings";
+import { validateWorkingHours } from "@/lib/businessHours";
+import WorkingHoursEditor from "@/components/admin/WorkingHoursEditor";
 
-type FormState = Pick<SiteSettings, "address" | "hours" | "phone" | "phoneSecondary" | "mapsUrl">;
+type FormState = Pick<
+  SiteSettings,
+  "address" | "workingHours" | "phone" | "phoneSecondary" | "mapsUrl"
+>;
 
 export default function ContactsForm({ initial }: { initial: FormState }) {
   const [data, setData] = useState<FormState>(initial);
@@ -18,6 +23,13 @@ export default function ContactsForm({ initial }: { initial: FormState }) {
 
   async function handleSave() {
     setError(null);
+
+    const hoursCheck = validateWorkingHours(data.workingHours);
+    if (!hoursCheck.ok) {
+      setError(hoursCheck.error);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -49,12 +61,14 @@ export default function ContactsForm({ initial }: { initial: FormState }) {
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-ink/70">Часы работы</label>
-        <input
-          value={data.hours}
-          onChange={(e) => update("hours", e.target.value)}
-          placeholder="Ежедневно 11:00–24:00"
-          className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+        <span className="mb-1 block text-sm font-medium text-ink/70">Часы работы</span>
+        <p className="mb-2 text-xs text-ink/50">
+          Время по Красноярску. Показывается на сайте и определяет, когда принимаются заказы:
+          вне этих часов и в выходные оформить заказ нельзя. Закрытие «00:00» — в полночь.
+        </p>
+        <WorkingHoursEditor
+          value={data.workingHours}
+          onChange={(next) => update("workingHours", next)}
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

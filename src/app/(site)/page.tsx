@@ -4,6 +4,7 @@ import ScrollCarousel from "@/components/ScrollCarousel";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getReviews } from "@/lib/reviews";
 import { phoneToTelHref } from "@/lib/phone";
+import { formatWorkingHoursLines } from "@/lib/businessHours";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ const dishes = [
 export default async function HomePage() {
   const [settings, reviews] = await Promise.all([getSiteSettings(), getReviews()]);
   const aboutParagraphs = settings.aboutText.split("\n\n").filter(Boolean);
+  const hoursLines = formatWorkingHoursLines(settings.workingHours);
 
   return (
     <>
@@ -136,8 +138,10 @@ export default async function HomePage() {
               <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ash">
                 Часы работы
               </span>
-              <span className="text-sm font-semibold text-parchment-light">
-                {settings.hours}
+              <span className="flex flex-col text-sm font-semibold text-parchment-light">
+                {hoursLines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
               </span>
             </div>
           </div>
@@ -365,7 +369,9 @@ export default async function HomePage() {
                 <tr className="border-b border-parchment/10">
                   <td className="py-3 text-sm text-parchment/60">Часы работы</td>
                   <td className="py-3 text-right font-mono text-sm font-bold text-parchment-light">
-                    {settings.hours}
+                    {hoursLines.map((line) => (
+                      <div key={line}>{line}</div>
+                    ))}
                   </td>
                 </tr>
               </tbody>
