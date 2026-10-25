@@ -1,20 +1,34 @@
 import { NextResponse } from "next/server";
-import type { Order, OrderPayload } from "@/types/order";
+import type { Order, OrderItem, OrderPayload } from "@/types/order";
 import { saveOrder } from "@/lib/orders";
 import { createPayment, isYooKassaConfigured } from "@/lib/yookassa";
 import { notifyNewOrder } from "@/lib/email";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
 import { getOrderAvailability } from "@/lib/businessHours";
-import { getWorkingHours } from "@/lib/siteSettings";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { getMenuItemsByIds } from "@/lib/menu-store";
+import { calculateOrderTotals, sumItems } from "@/lib/orderPricing";
+
+const MAX_ITEM_QUANTITY = 99;
+
+// Тело запроса — недоверенные данные клиента. Цены и итоговая сумма из него
+// не используются вовсе: сервер сам берёт цены из меню и считает итог.
+type OrderRequestBody = Pick<
+  OrderPayload,
+  "name" | "phone" | "address" | "lat" | "lon" | "comment" | "paymentMethod"
+> & {
+  items?: { id?: unknown; name?: unknown; quantity?: unknown; sauce?: unknown }[];
+  deliveryType?: unknown;
+  consent?: boolean;
+};
 
 export async function POST(request: Request) {
-  const { consent, ...payload } = (await request.json()) as Omit<OrderPayload, "deliveryType"> & {
-    deliveryType?: unknown;
-    consent?: boolean;
-  };
+  const { consent, ...payload } = (await request.json()) as OrderRequestBody;
 
-  const availability = getOrderAvailability(await getWorkingHours());
+  const settings = await getSiteSettings();
+
+  const availability = getOrderAvailability(settings.workingHours);
   if (!availability.open) {
     return NextResponse.json({ error: availability.message }, { status: 403 });
   }
@@ -51,7 +65,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!payload.items?.length) {
+  if (!Array.isArray(payload.items) || payload.items.length === 0) {
     return NextResponse.json({ error: "Корзина пуста" }, { status: 400 });
   }
 
@@ -75,17 +89,65 @@ export async function POST(request: Request) {
     }
   }
 
+  const requestedIds = payload.items.map((line) => line?.id);
+  if (!requestedIds.every((id): id is string => typeof id === "string" && id.length > 0)) {
+    return NextResponse.json({ error: "Некорректный состав заказа" }, { status: 400 });
+  }
+  const menuById = new Map(
+    (await getMenuItemsByIds([...new Set(requestedIds)])).map((menuItem) => [menuItem.id, menuItem]),
+  );
+
+  const orderItems: OrderItem[] = [];
+  for (const line of payload.items) {
+    const quantity = line.quantity;
+    if (
+      typeof quantity !== "number" ||
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > MAX_ITEM_QUANTITY
+    ) {
+      return NextResponse.json({ error: "Некорректное количество блюда в корзине" }, { status: 400 });
+    }
+
+    const menuItem = menuById.get(line.id as string);
+    if (!menuItem || menuItem.isAvailable === false || menuItem.price == null) {
+      const label =
+        menuItem?.name ?? (typeof line.name === "string" ? line.name.slice(0, 80) : "из корзины");
+      return NextResponse.json(
+        { error: `Блюдо «${label}» сейчас недоступно — уберите его из корзины.` },
+        { status: 400 },
+      );
+    }
+
+    const sauce = typeof line.sauce === "string" ? line.sauce.trim().slice(0, 100) : "";
+    orderItems.push({
+      id: menuItem.id,
+      name: menuItem.name,
+      price: menuItem.price,
+      quantity,
+      sauce: sauce || undefined,
+    });
+  }
+
+  const totals = calculateOrderTotals(sumItems(orderItems), deliveryType, settings.deliveryCost);
+
   const id = crypto.randomUUID().slice(0, 8);
 
   const order: Order = {
-    ...payload,
-    deliveryType,
-    address: isPickup ? "" : payload.address,
-    lat: hasValidCoords ? payload.lat : undefined,
-    lon: hasValidCoords ? payload.lon : undefined,
     id,
     createdAt: new Date().toISOString(),
     status: payload.paymentMethod === "card" ? "awaiting_payment" : "new",
+    name: payload.name,
+    phone: payload.phone,
+    address: isPickup ? "" : payload.address,
+    lat: hasValidCoords ? payload.lat : undefined,
+    lon: hasValidCoords ? payload.lon : undefined,
+    comment: payload.comment,
+    items: orderItems,
+    totalPrice: totals.total,
+    deliveryFee: totals.deliveryFee,
+    paymentMethod: payload.paymentMethod,
+    deliveryType,
   };
 
   try {
@@ -118,7 +180,7 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin;
     const payment = await createPayment({
       orderId: id,
-      amount: payload.totalPrice,
+      amount: order.totalPrice,
       description: `Заказ №${id} в кафе «Виктория»`,
       returnUrl: `${origin}/order/${id}`,
     });

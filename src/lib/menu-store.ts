@@ -431,6 +431,15 @@ export async function getAllMenuItems(): Promise<MenuItem[]> {
   return rows.map(rowToItem);
 }
 
+/** Блюда по id — включая скрытые, чтобы сервер мог отличить «нет такого» от «недоступно». */
+export async function getMenuItemsByIds(ids: string[]): Promise<MenuItem[]> {
+  await ready();
+  const rows = (await sql`
+    SELECT * FROM menu_items WHERE id = ANY(${ids})
+  `) as MenuItemRow[];
+  return rows.map(rowToItem);
+}
+
 export async function getAllMenuItemsAdmin(): Promise<MenuItem[]> {
   await ready();
   const rows = (await sql`

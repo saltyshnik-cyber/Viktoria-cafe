@@ -60,6 +60,7 @@ function formatOrderMessage(order: Order, title: string): string {
     `Заказ №${order.id}`,
     "",
     itemsList,
+    order.deliveryFee > 0 ? `• Доставка — ${order.deliveryFee} ₽` : undefined,
     "",
     `Итого: ${order.totalPrice} ₽`,
     `Оплата: ${paymentLabel}`,

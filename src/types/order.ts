@@ -27,7 +27,10 @@ export type OrderPayload = {
   lon?: number;
   comment?: string;
   items: OrderItem[];
+  // Итог к оплате: блюда + стоимость доставки. Считается сервером.
   totalPrice: number;
+  // Стоимость доставки на момент заказа (0 — самовывоз или бесплатная доставка).
+  deliveryFee: number;
   paymentMethod: PaymentMethod;
   deliveryType: DeliveryType;
 };

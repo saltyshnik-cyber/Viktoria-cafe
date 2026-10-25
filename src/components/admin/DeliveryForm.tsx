@@ -81,7 +81,7 @@ export default function DeliveryForm({ initial }: { initial: FormState }) {
           className="w-full max-w-xs rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
         />
         <p className="mt-1 text-xs text-ink/50">
-          Показывается гостю в корзине справочно (0 — доставка бесплатная).
+          Добавляется к сумме заказа при доставке (0 — доставка бесплатная). При самовывозе не взимается.
         </p>
       </div>
 

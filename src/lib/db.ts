@@ -58,6 +58,9 @@ export function ensureSchema(): Promise<void> {
       // Все заказы, созданные до появления самовывоза, были доставкой — DEFAULT
       // проставляет это существующим строкам, сами строки не меняются.
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_type TEXT NOT NULL DEFAULT 'delivery'`;
+      // До этого доставка в итог не входила: у прежних заказов 0, а total_price
+      // остаётся ровно той суммой, которую гости тогда и оплатили.
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee INTEGER NOT NULL DEFAULT 0`;
       await sql`
         CREATE TABLE IF NOT EXISTS categories (
           id TEXT PRIMARY KEY,

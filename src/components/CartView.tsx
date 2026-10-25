@@ -112,7 +112,7 @@ export default function CartView({
         )}
 
         <div className="mt-6 flex items-center justify-between border-t border-parchment/10 pt-4">
-          <span className="text-parchment/60">Итого</span>
+          <span className="text-parchment/60">Сумма блюд</span>
           <span className="text-xl font-bold text-parchment-light">{totalPrice} ₽</span>
         </div>
 

@@ -6,5 +6,11 @@ export const dynamic = "force-dynamic";
 export default async function CheckoutPage() {
   const settings = await getSiteSettings();
 
-  return <CheckoutForm cafeAddress={settings.address} cafePhone={settings.phone} />;
+  return (
+    <CheckoutForm
+      cafeAddress={settings.address}
+      cafePhone={settings.phone}
+      deliveryCost={settings.deliveryCost}
+    />
+  );
 }

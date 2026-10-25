@@ -39,6 +39,35 @@ export default async function OrderConfirmationPage({
       </div>
       <h1 className="text-2xl font-bold text-ink">Заказ №{id} принят!</h1>
       <p className="mt-2 text-ink/60">{getStatusMessage(order?.status)}</p>
+
+      {order && (
+        <ul className="mx-auto mt-8 max-w-md divide-y divide-black/5 rounded-xl2 border border-black/5 bg-white px-4 text-left">
+          {order.items.map((item, index) => (
+            <li
+              key={`${item.id}::${item.sauce ?? ""}::${index}`}
+              className="flex items-center justify-between gap-3 py-3 text-sm"
+            >
+              <span className="text-ink/70">
+                {item.name}
+                {item.sauce ? ` (соус: ${item.sauce})` : ""} × {item.quantity}
+              </span>
+              <span className="shrink-0 font-medium text-ink">
+                {item.price * item.quantity} ₽
+              </span>
+            </li>
+          ))}
+          {order.deliveryFee > 0 && (
+            <li className="flex items-center justify-between py-3 text-sm">
+              <span className="text-ink/70">Доставка</span>
+              <span className="font-medium text-ink">{order.deliveryFee} ₽</span>
+            </li>
+          )}
+          <li className="flex items-center justify-between py-3 font-semibold text-ink">
+            <span>Итого</span>
+            <span>{order.totalPrice} ₽</span>
+          </li>
+        </ul>
+      )}
       <Link
         href="/"
         className="mt-6 inline-block rounded-full bg-primary px-5 py-2 text-sm font-semibold text-cream hover:bg-primary-dark"

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { DeliveryType, PaymentMethod } from "@/types/order";
 import { DELIVERY_TYPE_LABELS } from "@/lib/orderLabels";
+import { calculateOrderTotals } from "@/lib/orderPricing";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import DeliveryMapPicker, {
   type DeliveryLocation,
@@ -30,15 +31,23 @@ type FieldErrors = {
 export default function CheckoutForm({
   cafeAddress,
   cafePhone,
+  deliveryCost,
 }: {
   cafeAddress: string;
   cafePhone: string;
+  deliveryCost: number;
 }) {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice: itemsTotal, clearCart } = useCart();
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("delivery");
   const isPickup = deliveryType === "pickup";
+  // Показываем ту же сумму, которую посчитает сервер (он пересчитает сам по ценам меню).
+  const { deliveryFee, total: totalPrice } = calculateOrderTotals(
+    itemsTotal,
+    deliveryType,
+    deliveryCost,
+  );
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+7");
   const [address, setAddress] = useState("");
@@ -234,14 +243,13 @@ export default function CheckoutForm({
           lat: isPickup ? undefined : location?.lat,
           lon: isPickup ? undefined : location?.lon,
           comment: comment || undefined,
+          // Цены и итог сервер определяет сам; name — только для сообщения об ошибке.
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
-            price: item.price,
             quantity: item.quantity,
             sauce: item.sauce,
           })),
-          totalPrice,
           paymentMethod,
           consent: consentGiven,
         }),
@@ -288,6 +296,14 @@ export default function CheckoutForm({
             </span>
           </li>
         ))}
+        {!isPickup && (
+          <li className="flex items-center justify-between py-3 text-sm">
+            <span className="text-ink/70">Доставка</span>
+            <span className="font-medium text-ink">
+              {deliveryFee > 0 ? `${deliveryFee} ₽` : "бесплатно"}
+            </span>
+          </li>
+        )}
         <li className="flex items-center justify-between py-3 font-semibold text-ink">
           <span>Итого</span>
           <span>{totalPrice} ₽</span>

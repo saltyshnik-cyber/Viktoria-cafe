@@ -52,6 +52,12 @@ export default function OrderReceipt({
       ))}
 
       <ReceiptDivider />
+      {order.deliveryFee > 0 && (
+        <div className="flex justify-between">
+          <span>Доставка</span>
+          <span>{order.deliveryFee} ₽</span>
+        </div>
+      )}
       <div className="receipt-total flex justify-between">
         <span>Итого</span>
         <span>{order.totalPrice} ₽</span>

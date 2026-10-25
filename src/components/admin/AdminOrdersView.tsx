@@ -257,6 +257,13 @@ export default function AdminOrdersView({
                 ))}
               </ul>
 
+              {order.deliveryFee > 0 && (
+                <div className="mt-2 flex items-center justify-between text-sm text-ink/70">
+                  <span>Доставка</span>
+                  <span>{order.deliveryFee} ₽</span>
+                </div>
+              )}
+
               <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3 text-sm">
                 <span className="text-ink/50">
                   {PAYMENT_METHOD_LABELS[order.paymentMethod]}

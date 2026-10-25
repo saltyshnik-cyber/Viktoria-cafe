@@ -46,6 +46,7 @@ function formatOrderEmail(order: Order, title: string): { subject: string; html:
     `Время: ${createdAt}`,
     "",
     ...order.items.map((item) => `• ${itemLine(item)}`),
+    order.deliveryFee > 0 ? `• Доставка — ${order.deliveryFee} ₽` : undefined,
     "",
     `Итого: ${order.totalPrice} ₽`,
     `Оплата: ${paymentLabel}`,
@@ -65,7 +66,9 @@ function formatOrderEmail(order: Order, title: string): { subject: string; html:
   <h2 style="margin:0 0 4px">${escapeHtml(title)} №${escapeHtml(order.id)}</h2>
   <div style="color:#777;margin-bottom:16px">${escapeHtml(createdAt)}</div>
   <ul style="padding-left:18px;margin:0 0 12px">
-    ${order.items.map((item) => `<li>${escapeHtml(itemLine(item))}</li>`).join("\n    ")}
+    ${order.items.map((item) => `<li>${escapeHtml(itemLine(item))}</li>`).join("\n    ")}${
+      order.deliveryFee > 0 ? `\n    <li>Доставка — ${order.deliveryFee} ₽</li>` : ""
+    }
   </ul>
   <div style="font-size:17px;font-weight:bold">Итого: ${order.totalPrice} ₽</div>
   <div style="margin-bottom:16px">Оплата: ${escapeHtml(paymentLabel)}</div>
