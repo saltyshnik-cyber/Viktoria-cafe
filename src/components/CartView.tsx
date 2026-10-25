@@ -101,8 +101,8 @@ export default function CartView({
 
         {remainingForDelivery > 0 ? (
           <p className="mt-4 rounded-lg bg-parchment/10 px-4 py-3 text-sm text-parchment/70">
-            Добавьте ещё на {remainingForDelivery} ₽ — доставка от{" "}
-            {deliveryThreshold} ₽
+            Для доставки добавьте ещё на {remainingForDelivery} ₽ — доставка от{" "}
+            {deliveryThreshold} ₽. Самовывоз доступен без минимальной суммы.
           </p>
         ) : (
           <p className="mt-4 rounded-lg bg-gold/15 px-4 py-3 text-sm text-gold">
@@ -116,22 +116,12 @@ export default function CartView({
           <span className="text-xl font-bold text-parchment-light">{totalPrice} ₽</span>
         </div>
 
-        {remainingForDelivery > 0 ? (
-          <button
-            type="button"
-            disabled
-            className="mt-6 w-full cursor-not-allowed rounded-full bg-ember py-3 text-sm font-semibold text-parchment-light opacity-40"
-          >
-            Оформить заказ
-          </button>
-        ) : (
-          <Link
-            href="/checkout"
-            className="mt-6 block w-full rounded-full bg-ember py-3 text-center text-sm font-semibold text-parchment-light transition hover:bg-ember-light"
-          >
-            Оформить заказ
-          </Link>
-        )}
+        <Link
+          href="/checkout"
+          className="mt-6 block w-full rounded-full bg-ember py-3 text-center text-sm font-semibold text-parchment-light transition hover:bg-ember-light"
+        >
+          Оформить заказ
+        </Link>
       </div>
     </div>
   );

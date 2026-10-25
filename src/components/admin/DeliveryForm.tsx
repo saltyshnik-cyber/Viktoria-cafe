@@ -63,7 +63,8 @@ export default function DeliveryForm({ initial }: { initial: FormState }) {
           className="w-full max-w-xs rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary"
         />
         <p className="mt-1 text-xs text-ink/50">
-          Пока сумма корзины меньше этой цифры, кнопка «Оформить заказ» неактивна.
+          Если сумма блюд меньше этой цифры, доставку оформить нельзя (проверяется и в корзине,
+          и на сервере). На самовывоз минимальная сумма не распространяется.
         </p>
       </div>
       <div>

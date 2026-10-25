@@ -11,6 +11,7 @@ export default async function CheckoutPage() {
       cafeAddress={settings.address}
       cafePhone={settings.phone}
       deliveryCost={settings.deliveryCost}
+      deliveryThreshold={settings.deliveryThreshold}
     />
   );
 }

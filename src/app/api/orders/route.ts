@@ -8,7 +8,12 @@ import { checkDeliveryZone } from "@/lib/deliveryZone";
 import { getOrderAvailability } from "@/lib/businessHours";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getMenuItemsByIds } from "@/lib/menu-store";
-import { calculateOrderTotals, sumItems } from "@/lib/orderPricing";
+import {
+  calculateOrderTotals,
+  deliveryMinimumMessage,
+  getDeliveryShortfall,
+  sumItems,
+} from "@/lib/orderPricing";
 
 const MAX_ITEM_QUANTITY = 99;
 
@@ -129,7 +134,17 @@ export async function POST(request: Request) {
     });
   }
 
-  const totals = calculateOrderTotals(sumItems(orderItems), deliveryType, settings.deliveryCost);
+  const itemsTotal = sumItems(orderItems);
+
+  const shortfall = getDeliveryShortfall(itemsTotal, deliveryType, settings.deliveryThreshold);
+  if (shortfall > 0) {
+    return NextResponse.json(
+      { error: deliveryMinimumMessage(settings.deliveryThreshold, shortfall) },
+      { status: 400 },
+    );
+  }
+
+  const totals = calculateOrderTotals(itemsTotal, deliveryType, settings.deliveryCost);
 
   const id = crypto.randomUUID().slice(0, 8);
 

@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { DeliveryType, PaymentMethod } from "@/types/order";
 import { DELIVERY_TYPE_LABELS } from "@/lib/orderLabels";
-import { calculateOrderTotals } from "@/lib/orderPricing";
+import {
+  calculateOrderTotals,
+  deliveryMinimumMessage,
+  getDeliveryShortfall,
+} from "@/lib/orderPricing";
 import { isBlank, isValidPhone } from "@/lib/validation";
 import DeliveryMapPicker, {
   type DeliveryLocation,
@@ -32,10 +36,12 @@ export default function CheckoutForm({
   cafeAddress,
   cafePhone,
   deliveryCost,
+  deliveryThreshold,
 }: {
   cafeAddress: string;
   cafePhone: string;
   deliveryCost: number;
+  deliveryThreshold: number;
 }) {
   const router = useRouter();
   const { items, totalPrice: itemsTotal, clearCart } = useCart();
@@ -48,6 +54,9 @@ export default function CheckoutForm({
     deliveryType,
     deliveryCost,
   );
+  // Минимальная сумма касается только доставки — самовывоз можно оформить на любую.
+  const deliveryShortfall = getDeliveryShortfall(itemsTotal, deliveryType, deliveryThreshold);
+  const isBelowDeliveryMinimum = deliveryShortfall > 0;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+7");
   const [address, setAddress] = useState("");
@@ -224,6 +233,11 @@ export default function CheckoutForm({
       return;
     }
 
+    if (isBelowDeliveryMinimum) {
+      setError(deliveryMinimumMessage(deliveryThreshold, deliveryShortfall));
+      return;
+    }
+
     if (isOutOfDeliveryZone && zoneCheck && !zoneCheck.ok) {
       setError(zoneCheck.reason);
       return;
@@ -265,7 +279,7 @@ export default function CheckoutForm({
       clearCart();
 
       if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+        window.location.assign(data.paymentUrl);
         return;
       }
 
@@ -337,6 +351,11 @@ export default function CheckoutForm({
               </button>
             ))}
           </div>
+          {isBelowDeliveryMinimum && (
+            <p className="mt-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              {deliveryMinimumMessage(deliveryThreshold, deliveryShortfall)}
+            </p>
+          )}
         </div>
 
         <div>
@@ -529,18 +548,20 @@ export default function CheckoutForm({
 
         <button
           type="submit"
-          disabled={isSubmitting || isOutOfDeliveryZone || isClosed}
+          disabled={isSubmitting || isOutOfDeliveryZone || isClosed || isBelowDeliveryMinimum}
           className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-cream transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSubmitting
             ? "Отправляем..."
             : isClosed
               ? "Сейчас не работаем"
-              : isOutOfDeliveryZone
-                ? "Адрес вне зоны доставки"
-                : paymentMethod === "card"
-                  ? `Оплатить ${totalPrice} ₽`
-                  : `Подтвердить заказ на ${totalPrice} ₽`}
+              : isBelowDeliveryMinimum
+                ? `Для доставки не хватает ${deliveryShortfall} ₽`
+                : isOutOfDeliveryZone
+                  ? "Адрес вне зоны доставки"
+                  : paymentMethod === "card"
+                    ? `Оплатить ${totalPrice} ₽`
+                    : `Подтвердить заказ на ${totalPrice} ₽`}
         </button>
       </form>
     </div>
