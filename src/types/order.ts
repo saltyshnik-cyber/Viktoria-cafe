@@ -1,7 +1,14 @@
 export type OrderItem = {
   id: string;
   name: string;
+  /** Цена после скидки — именно она идёт в итог заказа. */
   price: number;
+  /** Цена по прайсу до акции. Нет поля — акция не применялась. */
+  basePrice?: number;
+  /** Скидка на всю позицию, с учётом количества. */
+  discount?: number;
+  /** Акция, давшая скидку; null — скидки нет или их несколько. */
+  promotionId?: number | null;
   quantity: number;
   sauce?: string;
 };
@@ -40,4 +47,8 @@ export type Order = OrderPayload & {
   createdAt: string;
   status: OrderStatus;
   paymentId?: string;
+  /** Сумма всех скидок: на блюда плюс на заказ. */
+  itemsDiscount?: number;
+  /** Акции уровня заказа: промокод, «от суммы», бесплатная доставка. */
+  appliedPromotionIds?: number[];
 };
