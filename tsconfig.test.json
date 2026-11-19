@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "verbatimModuleSyntax": false,
+    "isolatedModules": false,
+    "incremental": false,
+    "outDir": "test-build",
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": ["src/lib/pricing.ts", "src/types/promotions.ts", "tests/**/*.test.ts"]
+}
