@@ -65,6 +65,61 @@ export function ensureSchema(): Promise<void> {
       // за период и фильтр «заказы с акцией N».
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS items_discount NUMERIC(10, 2) NOT NULL DEFAULT 0`;
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS applied_promotion_ids BIGINT[] NOT NULL DEFAULT '{}'`;
+
+      // Служебные отметки о разовых операциях. Нужны потому, что ensureSchema
+      // выполняется заново на каждом холодном старте инстанса, а некоторые
+      // операции (бэкфилл) не должны повторяться.
+      await sql`
+        CREATE TABLE IF NOT EXISTS schema_meta (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL DEFAULT '',
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `;
+
+      // Бэкфилл позиций старых заказов: base_price, final_price, discount_amount,
+      // promotion_id. Скидок тогда не было, поэтому обе цены равны прайсу.
+      // Под guard: без отметки в schema_meta этот UPDATE крутился бы на каждом
+      // новом инстансе по всем заказам.
+      const priced = await sql`SELECT 1 FROM schema_meta WHERE key = 'orders_items_priced'`;
+      if (priced.length === 0) {
+        await sql`
+          UPDATE orders AS target
+          SET items = rebuilt.items
+          FROM (
+            SELECT
+              source.id,
+              jsonb_agg(
+                CASE
+                  WHEN jsonb_exists(element.item, 'base_price') THEN element.item
+                  ELSE element.item || jsonb_build_object(
+                    'base_price', COALESCE(element.item -> 'price', '0'::jsonb),
+                    'final_price', COALESCE(element.item -> 'price', '0'::jsonb),
+                    'discount_amount', 0,
+                    'promotion_id', NULL
+                  )
+                END
+                ORDER BY element.position
+              ) AS items
+            FROM orders AS source,
+                 LATERAL jsonb_array_elements(source.items)
+                   WITH ORDINALITY AS element(item, position)
+            WHERE EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(source.items) AS probe(item)
+              WHERE NOT jsonb_exists(probe.item, 'base_price')
+            )
+            GROUP BY source.id
+          ) AS rebuilt
+          WHERE target.id = rebuilt.id
+        `;
+        await sql`
+          INSERT INTO schema_meta (key, value)
+          VALUES ('orders_items_priced', 'v1')
+          ON CONFLICT (key) DO NOTHING
+        `;
+      }
+
       await sql`
         CREATE TABLE IF NOT EXISTS categories (
           id TEXT PRIMARY KEY,
