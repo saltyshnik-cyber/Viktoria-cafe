@@ -21,6 +21,12 @@ export type SiteSettings = {
   mapsUrl: string;
   deliveryThreshold: number;
   deliveryCost: number;
+  // Всплывающее окно на сайте. Настройки живут в той же таблице site_settings,
+  // отдельная таблица не нужна: попап один и правится целиком из админки.
+  popupEnabled: boolean;
+  popupTitle: string;
+  popupText: string;
+  popupImageUrl: string;
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -46,10 +52,15 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   mapsUrl: "https://2gis.ru/krasnoyarsk/geo/70000001026596217/92.896586,56.011237",
   deliveryThreshold: 500,
   deliveryCost: 0,
+  popupEnabled: false,
+  popupTitle: "",
+  popupText: "",
+  popupImageUrl: "",
 };
 
 // Ключи хранения в site_settings(key, value) — galleryImages и workingHours
-// сериализуются в JSON, deliveryThreshold/deliveryCost хранятся как строки чисел.
+// сериализуются в JSON, deliveryThreshold/deliveryCost хранятся как строки чисел,
+// popupEnabled — как "true"/"false".
 const KEY_MAP: Record<keyof SiteSettings, string> = {
   heroTitle: "hero_title",
   heroSubtitle: "hero_subtitle",
@@ -66,9 +77,14 @@ const KEY_MAP: Record<keyof SiteSettings, string> = {
   mapsUrl: "maps_url",
   deliveryThreshold: "delivery_threshold",
   deliveryCost: "delivery_cost",
+  popupEnabled: "popup_enabled",
+  popupTitle: "popup_title",
+  popupText: "popup_text",
+  popupImageUrl: "popup_image_url",
 };
 
 const NUMBER_FIELDS = new Set<keyof SiteSettings>(["deliveryThreshold", "deliveryCost"]);
+const BOOLEAN_FIELDS = new Set<keyof SiteSettings>(["popupEnabled"]);
 
 // Повреждённое или невалидное значение в БД не должно ронять приём заказов —
 // в этом случае действует расписание по умолчанию.
@@ -112,6 +128,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       }
     } else if (field === "workingHours") {
       settings.workingHours = parseStoredWorkingHours(raw);
+    } else if (BOOLEAN_FIELDS.has(field)) {
+      (settings as Record<string, unknown>)[field] = raw === "true" || raw === "1";
     } else if (NUMBER_FIELDS.has(field)) {
       const num = Number(raw);
       if (!Number.isNaN(num)) {
@@ -143,4 +161,3 @@ export async function saveSiteSettings(partial: Partial<SiteSettings>): Promise<
     `;
   }
 }
-

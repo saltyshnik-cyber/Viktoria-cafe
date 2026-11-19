@@ -7,18 +7,15 @@ import { isBlank, isValidPhone } from "@/lib/validation";
 import { checkDeliveryZone } from "@/lib/deliveryZone";
 import { getOrderAvailability } from "@/lib/businessHours";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { getMenuItemsByIds } from "@/lib/menu-store";
-import {
-  calculateOrderTotals,
-  deliveryMinimumMessage,
-  getDeliveryShortfall,
-  sumItems,
-} from "@/lib/orderPricing";
+import { deliveryMinimumMessage, getDeliveryShortfall } from "@/lib/orderPricing";
+import { priceCart } from "@/lib/pricing-server";
+import type { CartLineRequest } from "@/lib/pricing-server";
 
 const MAX_ITEM_QUANTITY = 99;
 
-// Тело запроса — недоверенные данные клиента. Цены и итоговая сумма из него
-// не используются вовсе: сервер сам берёт цены из меню и считает итог.
+// Тело запроса — недоверенные данные клиента. Ни цены блюд, ни итог из него
+// не используются: сервер берёт цены из меню, применяет акции через priceCart
+// и пишет в заказ уже посчитанные значения.
 type OrderRequestBody = Pick<
   OrderPayload,
   "name" | "phone" | "address" | "lat" | "lon" | "comment" | "paymentMethod"
@@ -94,49 +91,55 @@ export async function POST(request: Request) {
     }
   }
 
-  const requestedIds = payload.items.map((line) => line?.id);
-  if (!requestedIds.every((id): id is string => typeof id === "string" && id.length > 0)) {
-    return NextResponse.json({ error: "Некорректный состав заказа" }, { status: 400 });
-  }
-  const menuById = new Map(
-    (await getMenuItemsByIds([...new Set(requestedIds)])).map((menuItem) => [menuItem.id, menuItem]),
-  );
-
-  const orderItems: OrderItem[] = [];
+  const lines: CartLineRequest[] = [];
   for (const line of payload.items) {
-    const quantity = line.quantity;
+    const id = typeof line?.id === "string" ? line.id : "";
+    const quantity = line?.quantity;
+
+    if (!id) {
+      return NextResponse.json({ error: "Некорректный состав заказа" }, { status: 400 });
+    }
     if (
       typeof quantity !== "number" ||
       !Number.isInteger(quantity) ||
       quantity < 1 ||
       quantity > MAX_ITEM_QUANTITY
     ) {
-      return NextResponse.json({ error: "Некорректное количество блюда в корзине" }, { status: 400 });
-    }
-
-    const menuItem = menuById.get(line.id as string);
-    if (!menuItem || menuItem.isAvailable === false || menuItem.price == null) {
-      const label =
-        menuItem?.name ?? (typeof line.name === "string" ? line.name.slice(0, 80) : "из корзины");
       return NextResponse.json(
-        { error: `Блюдо «${label}» сейчас недоступно — уберите его из корзины.` },
+        { error: "Некорректное количество блюда в корзине" },
         { status: 400 },
       );
     }
 
     const sauce = typeof line.sauce === "string" ? line.sauce.trim().slice(0, 100) : "";
-    orderItems.push({
-      id: menuItem.id,
-      name: menuItem.name,
-      price: menuItem.price,
-      quantity,
-      sauce: sauce || undefined,
-    });
+    lines.push({ id, quantity, sauce: sauce || undefined });
   }
 
-  const itemsTotal = sumItems(orderItems);
+  const now = new Date();
+  const priced = await priceCart(lines, {
+    deliveryType,
+    deliveryCost: settings.deliveryCost,
+    now,
+  });
 
-  const shortfall = getDeliveryShortfall(itemsTotal, deliveryType, settings.deliveryThreshold);
+  if (priced.unavailable.length > 0) {
+    const failedId = priced.unavailable[0];
+    const requested = payload.items.find((line) => line?.id === failedId);
+    const label =
+      typeof requested?.name === "string" ? requested.name.slice(0, 80) : "из корзины";
+    return NextResponse.json(
+      { error: `Блюдо «${label}» сейчас недоступно — уберите его из корзины.` },
+      { status: 400 },
+    );
+  }
+
+  // Порог минимальной суммы доставки — от subtotal, то есть от суммы после
+  // скидок на блюда. Ровно то же число вернул /api/cart/price.
+  const shortfall = getDeliveryShortfall(
+    priced.totals.subtotal,
+    deliveryType,
+    settings.deliveryThreshold,
+  );
   if (shortfall > 0) {
     return NextResponse.json(
       { error: deliveryMinimumMessage(settings.deliveryThreshold, shortfall) },
@@ -144,13 +147,30 @@ export async function POST(request: Request) {
     );
   }
 
-  const totals = calculateOrderTotals(itemsTotal, deliveryType, settings.deliveryCost);
+  const orderItems: OrderItem[] = priced.lines.map((line) => ({
+    id: line.id,
+    name: line.name,
+    price: line.final_price,
+    basePrice: line.base_price,
+    discount: line.discount_amount,
+    promotionId: line.promotion_id,
+    quantity: line.quantity,
+    sauce: line.sauce || undefined,
+  }));
+
+  const appliedPromotionIds = [
+    ...new Set(
+      priced.lines
+        .map((line) => line.promotion_id)
+        .filter((id): id is number => typeof id === "number"),
+    ),
+  ];
 
   const id = crypto.randomUUID().slice(0, 8);
 
   const order: Order = {
     id,
-    createdAt: new Date().toISOString(),
+    createdAt: now.toISOString(),
     status: payload.paymentMethod === "card" ? "awaiting_payment" : "new",
     name: payload.name,
     phone: payload.phone,
@@ -159,10 +179,12 @@ export async function POST(request: Request) {
     lon: hasValidCoords ? payload.lon : undefined,
     comment: payload.comment,
     items: orderItems,
-    totalPrice: totals.total,
-    deliveryFee: totals.deliveryFee,
+    totalPrice: priced.totals.total,
+    deliveryFee: priced.totals.delivery,
     paymentMethod: payload.paymentMethod,
     deliveryType,
+    itemsDiscount: priced.totals.discount,
+    appliedPromotionIds,
   };
 
   try {

@@ -6,12 +6,9 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import type { DeliveryType, PaymentMethod } from "@/types/order";
 import { DELIVERY_TYPE_LABELS } from "@/lib/orderLabels";
-import {
-  calculateOrderTotals,
-  deliveryMinimumMessage,
-  getDeliveryShortfall,
-} from "@/lib/orderPricing";
+import { deliveryMinimumMessage } from "@/lib/orderPricing";
 import { isBlank, isValidPhone } from "@/lib/validation";
+import { cartLineKey, useCartPricing } from "@/lib/useCartPricing";
 import DeliveryMapPicker, {
   type DeliveryLocation,
   type DeliveryMapPickerHandle,
@@ -44,19 +41,20 @@ export default function CheckoutForm({
   deliveryThreshold: number;
 }) {
   const router = useRouter();
-  const { items, totalPrice: itemsTotal, clearCart } = useCart();
+  const { items, clearCart } = useCart();
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("delivery");
   const isPickup = deliveryType === "pickup";
-  // Показываем ту же сумму, которую посчитает сервер (он пересчитает сам по ценам меню).
-  const { deliveryFee, total: totalPrice } = calculateOrderTotals(
-    itemsTotal,
-    deliveryType,
-    deliveryCost,
-  );
-  // Минимальная сумма касается только доставки — самовывоз можно оформить на любую.
-  const deliveryShortfall = getDeliveryShortfall(itemsTotal, deliveryType, deliveryThreshold);
-  const isBelowDeliveryMinimum = deliveryShortfall > 0;
+
+  // Сумму считает сервер: тот же эндпоинт и та же функция, что использует
+  // /api/orders, поэтому цифра на экране совпадает с суммой заказа.
+  const pricing = useCartPricing(items, deliveryType);
+  const deliveryFee = pricing?.totals.delivery ?? 0;
+  const totalPrice = pricing?.totals.total ?? null;
+  const deliveryShortfall = pricing?.deliveryShortfall ?? 0;
+  // Пока ответа нет — не блокируем кнопку, чтобы не мигать сообщением на загрузке.
+  const isBelowDeliveryMinimum = pricing !== null && deliveryShortfall > 0;
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+7");
   const [address, setAddress] = useState("");
@@ -257,7 +255,8 @@ export default function CheckoutForm({
           lat: isPickup ? undefined : location?.lat,
           lon: isPickup ? undefined : location?.lon,
           comment: comment || undefined,
-          // Цены и итог сервер определяет сам; name — только для сообщения об ошибке.
+          // Цены и итог сервер определяет сам по id блюд; name — только для
+          // сообщения об ошибке.
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -291,36 +290,74 @@ export default function CheckoutForm({
     }
   }
 
+  const pricedByKey = new Map(
+    (pricing?.lines ?? []).map((line) => [cartLineKey(line.id, line.sauce), line]),
+  );
+
+  const submitLabel = isSubmitting
+    ? "Отправляем..."
+    : isClosed
+      ? "Сейчас не работаем"
+      : isBelowDeliveryMinimum
+        ? `Для доставки не хватает ${deliveryShortfall} ₽`
+        : isOutOfDeliveryZone
+          ? "Адрес вне зоны доставки"
+          : totalPrice === null
+            ? "Подтвердить заказ"
+            : paymentMethod === "card"
+              ? `Оплатить ${totalPrice} ₽`
+              : `Подтвердить заказ на ${totalPrice} ₽`;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-bold text-ink">Оформление заказа</h1>
 
       <ul className="mt-6 divide-y divide-black/5 rounded-xl2 border border-black/5 bg-white px-4">
-        {items.map((item) => (
-          <li
-            key={`${item.id}::${item.sauce ?? ""}`}
-            className="flex items-center justify-between py-3 text-sm"
-          >
-            <span className="text-ink/70">
-              {item.name}
-              {item.sauce ? ` (соус: ${item.sauce})` : ""} × {item.quantity}
-            </span>
-            <span className="font-medium text-ink">
-              {item.price * item.quantity} ₽
-            </span>
-          </li>
-        ))}
+        {items.map((item) => {
+          const line = pricedByKey.get(cartLineKey(item.id, item.sauce));
+
+          return (
+            <li
+              key={cartLineKey(item.id, item.sauce)}
+              className="flex items-center justify-between py-3 text-sm"
+            >
+              <span className="text-ink/70">
+                {item.name}
+                {item.sauce ? ` (соус: ${item.sauce})` : ""} × {item.quantity}
+                {line && line.discount_amount > 0 && line.badge && (
+                  <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                    {line.badge}
+                  </span>
+                )}
+              </span>
+              <span className="text-right font-medium text-ink">
+                {line && line.discount_amount > 0 && (
+                  <span className="mr-2 text-xs text-ink/40 line-through">
+                    {line.base_line_total} ₽
+                  </span>
+                )}
+                {line ? `${line.line_total} ₽` : "…"}
+              </span>
+            </li>
+          );
+        })}
         {!isPickup && (
           <li className="flex items-center justify-between py-3 text-sm">
             <span className="text-ink/70">Доставка</span>
             <span className="font-medium text-ink">
-              {deliveryFee > 0 ? `${deliveryFee} ₽` : "бесплатно"}
+              {pricing === null ? "…" : deliveryFee > 0 ? `${deliveryFee} ₽` : "бесплатно"}
             </span>
+          </li>
+        )}
+        {pricing !== null && pricing.totals.discount > 0 && (
+          <li className="flex items-center justify-between py-3 text-sm">
+            <span className="text-ink/70">Скидки по акциям</span>
+            <span className="font-medium text-primary">−{pricing.totals.discount} ₽</span>
           </li>
         )}
         <li className="flex items-center justify-between py-3 font-semibold text-ink">
           <span>Итого</span>
-          <span>{totalPrice} ₽</span>
+          <span>{totalPrice === null ? "…" : `${totalPrice} ₽`}</span>
         </li>
       </ul>
 
@@ -551,17 +588,7 @@ export default function CheckoutForm({
           disabled={isSubmitting || isOutOfDeliveryZone || isClosed || isBelowDeliveryMinimum}
           className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-cream transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {isSubmitting
-            ? "Отправляем..."
-            : isClosed
-              ? "Сейчас не работаем"
-              : isBelowDeliveryMinimum
-                ? `Для доставки не хватает ${deliveryShortfall} ₽`
-                : isOutOfDeliveryZone
-                  ? "Адрес вне зоны доставки"
-                  : paymentMethod === "card"
-                    ? `Оплатить ${totalPrice} ₽`
-                    : `Подтвердить заказ на ${totalPrice} ₽`}
+          {submitLabel}
         </button>
       </form>
     </div>
