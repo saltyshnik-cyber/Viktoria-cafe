@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { getMenuItemsByIds } from "@/lib/menu-store";
+import { getDeliveryShortfall } from "@/lib/orderPricing";
+import { priceCart } from "@/lib/pricing-server";
+import type { CartLineRequest } from "@/lib/pricing-server";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { getCartPricing } from "@/lib/cartPricing";
-import { roundMoney } from "@/lib/pricing";
-import type { CartLineInput } from "@/lib/pricing";
 
 const MAX_ITEM_QUANTITY = 99;
 const MAX_CART_LINES = 50;
 
-// Публичный расчёт корзины. Клиент присылает только состав — id, количество
-// и соус. Ни цены, ни суммы из тела запроса не используются.
+// Публичный расчёт корзины. Тело содержит только состав: id блюда, количество
+// и соус. Ни цены, ни суммы из него не читаются — иначе скидку можно было бы
+// подделать запросом.
 type CartRequestBody = {
-  items?: { id?: unknown; quantity?: unknown; sauce?: unknown }[];
-  promoCode?: unknown;
+  items?: unknown;
+  deliveryType?: unknown;
 };
-
-function cartKey(id: string, sauce: string): string {
-  return `${id}::${sauce}`;
-}
 
 export async function POST(request: Request) {
   let body: CartRequestBody;
@@ -35,81 +31,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Слишком много позиций в корзине" }, { status: 400 });
   }
 
-  const requested = rawItems.map((line) => ({
-    id: typeof line?.id === "string" ? line.id : "",
-    quantity: typeof line?.quantity === "number" ? line.quantity : 0,
-    sauce: typeof line?.sauce === "string" ? line.sauce.trim().slice(0, 100) : "",
-  }));
+  const lines: CartLineRequest[] = [];
 
-  if (requested.some((line) => !line.id)) {
-    return NextResponse.json({ error: "Некорректный состав корзины" }, { status: 400 });
-  }
-  if (
-    requested.some(
-      (line) =>
-        !Number.isInteger(line.quantity) ||
-        line.quantity < 1 ||
-        line.quantity > MAX_ITEM_QUANTITY,
-    )
-  ) {
-    return NextResponse.json({ error: "Некорректное количество блюда" }, { status: 400 });
-  }
+  for (const raw of rawItems) {
+    const candidate = (raw ?? {}) as { id?: unknown; quantity?: unknown; sauce?: unknown };
+    const id = typeof candidate.id === "string" ? candidate.id : "";
+    const quantity = typeof candidate.quantity === "number" ? candidate.quantity : 0;
+    const sauce =
+      typeof candidate.sauce === "string" ? candidate.sauce.trim().slice(0, 100) : "";
 
-  const menuById = new Map(
-    (await getMenuItemsByIds([...new Set(requested.map((line) => line.id))])).map((item) => [
-      item.id,
-      item,
-    ]),
-  );
-
-  const unavailable: string[] = [];
-  const cartLines: CartLineInput[] = [];
-  const keys: { key: string; sauce: string }[] = [];
-
-  for (const line of requested) {
-    const menuItem = menuById.get(line.id);
-    if (!menuItem || menuItem.isAvailable === false || menuItem.price == null) {
-      unavailable.push(line.id);
-      continue;
+    if (!id) {
+      return NextResponse.json({ error: "Некорректный состав корзины" }, { status: 400 });
+    }
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > MAX_ITEM_QUANTITY
+    ) {
+      return NextResponse.json({ error: "Некорректное количество блюда" }, { status: 400 });
     }
 
-    cartLines.push({
-      id: menuItem.id,
-      categoryId: menuItem.categoryId,
-      price: menuItem.price,
-      quantity: line.quantity,
-    });
-    keys.push({ key: cartKey(line.id, line.sauce), sauce: line.sauce });
+    lines.push({ id, quantity, sauce: sauce || undefined });
   }
 
+  const deliveryType = body.deliveryType === "pickup" ? "pickup" : "delivery";
   const settings = await getSiteSettings();
-  const promoCode = typeof body.promoCode === "string" ? body.promoCode : undefined;
-
-  const { lines, totals } = await getCartPricing(cartLines, {
-    deliveryType: "delivery",
+  const result = await priceCart(lines, {
+    deliveryType,
     deliveryCost: settings.deliveryCost,
-    promoCode,
   });
 
   return NextResponse.json({
-    lines: lines.map((line, index) => ({
-      key: keys[index].key,
-      id: line.id,
-      sauce: keys[index].sauce,
-      quantity: line.quantity,
-      basePrice: line.basePrice,
-      price: line.price,
-      // Итог по строке считается здесь, чтобы клиент ничего не умножал.
-      lineTotal: roundMoney(line.price * line.quantity),
-      baseLineTotal: roundMoney(line.basePrice * line.quantity),
-      discount: line.discount,
-      promotionId: line.promotionId,
-      badge: line.badge,
-      label: line.label,
-    })),
-    totals,
-    unavailable,
+    lines: result.lines,
+    totals: result.totals,
+    unavailable: result.unavailable,
     deliveryThreshold: settings.deliveryThreshold,
     deliveryCost: settings.deliveryCost,
+    deliveryShortfall: getDeliveryShortfall(
+      result.totals.subtotal,
+      deliveryType,
+      settings.deliveryThreshold,
+    ),
   });
 }
