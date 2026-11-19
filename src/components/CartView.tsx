@@ -1,51 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useCart } from "@/context/CartContext";
 import QuantityStepper from "@/components/QuantityStepper";
-
-type PricedLine = {
-  key: string;
-  id: string;
-  sauce: string;
-  quantity: number;
-  basePrice: number;
-  price: number;
-  lineTotal: number;
-  baseLineTotal: number;
-  discount: number;
-  promotionId: number | null;
-  badge: string | null;
-  label: string | null;
-};
-
-type CartTotals = {
-  base: number;
-  itemsDiscount: number;
-  subtotal: number;
-  orderDiscount: number;
-  deliveryFee: number;
-  total: number;
-  freeDelivery: boolean;
-};
-
-type PricingResponse = {
-  lines: PricedLine[];
-  totals: CartTotals;
-  unavailable: string[];
-  deliveryThreshold: number;
-  deliveryCost: number;
-};
+import { cartLineKey, useCartPricing } from "@/lib/useCartPricing";
+import type { PricedLine } from "@/lib/useCartPricing";
 
 const moneyFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
 
 function money(value: number): string {
   return `${moneyFormat.format(value)} ₽`;
-}
-
-function cartKey(id: string, sauce?: string): string {
-  return `${id}::${sauce ?? ""}`;
 }
 
 export default function CartView({
@@ -56,49 +21,13 @@ export default function CartView({
   deliveryCost: number;
 }) {
   const { items, totalItems, setQuantity, removeItem, clearCart } = useCart();
-  const [pricing, setPricing] = useState<PricingResponse | null>(null);
-
-  // Состав корзины строкой: эффект перезапускается только при реальном
-  // изменении блюд или количества, а не на каждый рендер.
-  const signature = items
-    .map((item) => `${cartKey(item.id, item.sauce)}x${item.quantity}`)
-    .join("|");
-
-  useEffect(() => {
-    if (items.length === 0) {
-      setPricing(null);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    fetch("/api/cart/price", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: items.map((item) => ({
-          id: item.id,
-          quantity: item.quantity,
-          sauce: item.sauce,
-        })),
-      }),
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
-      .then((data: PricingResponse) => setPricing(data))
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        // Оставляем прошлые цены: показать неверные хуже, чем показать устаревшие.
-      });
-
-    return () => controller.abort();
-    // items нужен только как источник состава — зависимость описана сигнатурой.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature]);
+  const pricing = useCartPricing(items);
 
   const linesByKey = useMemo(() => {
     const map = new Map<string, PricedLine>();
-    for (const line of pricing?.lines ?? []) map.set(line.key, line);
+    for (const line of pricing?.lines ?? []) {
+      map.set(cartLineKey(line.id, line.sauce), line);
+    }
     return map;
   }, [pricing]);
 
@@ -157,11 +86,14 @@ export default function CartView({
         <ul className="mt-6 divide-y divide-parchment/10">
           {items.map((item) => {
             const isUnavailable = unavailable.has(item.id);
-            const line = linesByKey.get(cartKey(item.id, item.sauce));
-            const hasDiscount = Boolean(line && line.discount > 0 && line.price < line.basePrice);
+            const line = linesByKey.get(cartLineKey(item.id, item.sauce));
+            const hasDiscount = Boolean(line && line.discount_amount > 0);
 
             return (
-              <li key={cartKey(item.id, item.sauce)} className="flex items-center gap-4 py-4">
+              <li
+                key={cartLineKey(item.id, item.sauce)}
+                className="flex items-center gap-4 py-4"
+              >
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-parchment-light text-2xl">
                   🍽️
                 </div>
@@ -183,9 +115,9 @@ export default function CartView({
                   {hasDiscount && line?.badge && (
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-sm text-parchment/40 line-through">
-                        {money(line.basePrice)}
+                        {money(line.base_price)}
                       </span>
-                      <span className="font-semibold text-gold">{money(line.price)}</span>
+                      <span className="font-semibold text-gold">{money(line.final_price)}</span>
                       <span className="rounded-full bg-ember px-2 py-0.5 text-[11px] font-semibold text-parchment-light">
                         {line.badge}
                       </span>
@@ -199,11 +131,11 @@ export default function CartView({
 
                 <div className="text-right">
                   <div className="font-semibold text-parchment-light">
-                    {line ? money(line.lineTotal) : "…"}
+                    {line ? money(line.line_total) : "…"}
                   </div>
                   {hasDiscount && line && (
                     <div className="text-xs text-parchment/40 line-through">
-                      {money(line.baseLineTotal)}
+                      {money(line.base_line_total)}
                     </div>
                   )}
                 </div>
@@ -246,30 +178,23 @@ export default function CartView({
             <span>{pricing ? money(pricing.totals.base) : "…"}</span>
           </div>
 
-          {pricing && pricing.totals.itemsDiscount > 0 && (
+          {pricing && pricing.totals.discount > 0 && (
             <div className="flex items-center justify-between text-gold">
               <span>Скидки по акциям</span>
-              <span>−{money(pricing.totals.itemsDiscount)}</span>
+              <span>−{money(pricing.totals.discount)}</span>
             </div>
           )}
 
-          {pricing && pricing.totals.orderDiscount > 0 && (
-            <div className="flex items-center justify-between text-gold">
-              <span>Скидка на заказ</span>
-              <span>−{money(pricing.totals.orderDiscount)}</span>
-            </div>
-          )}
-
-          {pricing && (
-            <div className="flex items-center justify-between text-parchment/60">
-              <span>Доставка</span>
-              <span>
-                {pricing.totals.deliveryFee === 0
+          <div className="flex items-center justify-between text-parchment/60">
+            <span>Доставка</span>
+            <span>
+              {pricing === null
+                ? "…"
+                : pricing.totals.delivery === 0
                   ? "Бесплатно"
-                  : money(pricing.totals.deliveryFee)}
-              </span>
-            </div>
-          )}
+                  : money(pricing.totals.delivery)}
+            </span>
+          </div>
 
           <div className="flex items-center justify-between pt-2">
             <span className="text-parchment/60">Итого</span>
