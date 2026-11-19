@@ -18,6 +18,7 @@ export type DishRef = {
 /** Денежные поля позиции — ровно те ключи, что пишутся в orders.items (jsonb). */
 export type PricedItemLine = {
   id: string;
+  name: string;
   sauce: string;
   quantity: number;
   base_price: number;
@@ -89,9 +90,10 @@ export async function getMenuPrices(
 }
 
 /**
- * Цены корзины. Берёт блюда и их цены из базы: всё, что клиент мог прислать
- * про деньги, игнорируется полностью. Тот же расчёт использует /api/orders,
- * поэтому сумма в заказе совпадает с ответом этого эндпоинта до копейки.
+ * Цены корзины и заказа. Берёт блюда и их цены из базы: всё, что клиент мог
+ * прислать про деньги, игнорируется полностью. Один и тот же расчёт
+ * используют /api/cart/price и /api/orders, поэтому сумма в заказе совпадает
+ * с ответом эндпоинта до копейки.
  */
 export async function priceCart(
   lines: CartLineRequest[],
@@ -108,7 +110,7 @@ export async function priceCart(
   const promotions = await getDishPromotions(now);
 
   const cartLines: CartLineInput[] = [];
-  const sauces: string[] = [];
+  const sources: { name: string; sauce: string }[] = [];
   const unavailable: string[] = [];
 
   for (const line of lines) {
@@ -124,7 +126,7 @@ export async function priceCart(
       price: item.price,
       quantity: line.quantity,
     });
-    sauces.push(line.sauce ?? "");
+    sources.push({ name: item.name, sauce: line.sauce ?? "" });
   }
 
   const priced = priceCartLines(cartLines, now, promotions);
@@ -141,7 +143,8 @@ export async function priceCart(
   return {
     lines: priced.map((line, index) => ({
       id: line.id,
-      sauce: sauces[index],
+      name: sources[index].name,
+      sauce: sources[index].sauce,
       quantity: line.quantity,
       base_price: line.basePrice,
       final_price: line.price,
