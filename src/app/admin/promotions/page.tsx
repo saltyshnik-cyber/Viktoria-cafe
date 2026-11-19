@@ -1,31 +1,34 @@
-import { getCategories } from "@/lib/categories";
-import { getAllMenuItemsAdmin } from "@/lib/menu-store";
 import { getAllPromotions } from "@/lib/promotions-store";
 import PromotionsManager from "@/components/admin/PromotionsManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPromotionsPage() {
-  const [promotions, items, categories] = await Promise.all([
-    getAllPromotions(),
-    getAllMenuItemsAdmin(),
-    getCategories(),
-  ]);
+  const promotions = await getAllPromotions();
 
-  const dishes = items.map((item) => ({
-    id: item.id,
-    name: item.name,
-    categoryId: item.categoryId,
-  }));
-
-  // Даты в пропсах — ISO-строки: Date через границу сервер/клиент тянет
-  // лишние приведения, а форма всё равно работает со строками.
+  // Даты через границу сервер/клиент передаём ISO-строками: форма всё равно
+  // работает со строковыми значениями полей.
   const serialized = promotions.map((promotion) => ({
-    ...promotion,
+    id: promotion.id,
+    slug: promotion.slug,
+    title: promotion.title,
+    description: promotion.description,
+    imageUrl: promotion.imageUrl,
+    kind: promotion.kind,
+    value: promotion.value,
+    maxDiscount: promotion.maxDiscount,
+    minOrderTotal: promotion.minOrderTotal,
+    scope: promotion.scope,
+    dishIds: promotion.dishIds,
+    categoryIds: promotion.categoryIds,
     startsAt: promotion.startsAt ? promotion.startsAt.toISOString() : null,
     endsAt: promotion.endsAt ? promotion.endsAt.toISOString() : null,
-    createdAt: promotion.createdAt.toISOString(),
-    updatedAt: promotion.updatedAt.toISOString(),
+    weekdays: promotion.weekdays,
+    timeFrom: promotion.timeFrom,
+    timeTo: promotion.timeTo,
+    priority: promotion.priority,
+    stackable: promotion.stackable,
+    isEnabled: promotion.isEnabled,
   }));
 
   return (
@@ -35,11 +38,7 @@ export default async function AdminPromotionsPage() {
         Скидки на блюда, категории и сумму заказа. Действующие акции сразу видны в меню
         и учитываются при оформлении заказа.
       </p>
-      <PromotionsManager
-        initialPromotions={serialized}
-        dishes={dishes}
-        categories={categories}
-      />
+      <PromotionsManager initialPromotions={serialized} />
     </div>
   );
 }
