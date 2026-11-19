@@ -1,10 +1,12 @@
 import { getAllPromotions } from "@/lib/promotions-store";
+import { getSiteSettings } from "@/lib/siteSettings";
 import PromotionsManager from "@/components/admin/PromotionsManager";
+import PopupSettingsForm from "@/components/admin/PopupSettingsForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPromotionsPage() {
-  const promotions = await getAllPromotions();
+  const [promotions, settings] = await Promise.all([getAllPromotions(), getSiteSettings()]);
 
   // Даты через границу сервер/клиент передаём ISO-строками: форма всё равно
   // работает со строковыми значениями полей.
@@ -38,6 +40,16 @@ export default async function AdminPromotionsPage() {
         Скидки на блюда, категории и сумму заказа. Действующие акции сразу видны в меню
         и учитываются при оформлении заказа.
       </p>
+
+      <PopupSettingsForm
+        initial={{
+          popupEnabled: settings.popupEnabled,
+          popupTitle: settings.popupTitle,
+          popupText: settings.popupText,
+          popupImageUrl: settings.popupImageUrl,
+        }}
+      />
+
       <PromotionsManager initialPromotions={serialized} />
     </div>
   );
