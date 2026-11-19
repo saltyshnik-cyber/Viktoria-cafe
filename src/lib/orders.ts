@@ -16,6 +16,8 @@ type OrderRow = {
   delivery_type: string;
   status: OrderStatus;
   payment_id: string | null;
+  items_discount: number | string | null;
+  applied_promotion_ids: Array<string | number> | null;
   created_at: string | Date;
 };
 
@@ -35,6 +37,9 @@ function rowToOrder(row: OrderRow): Order {
     deliveryType: row.delivery_type === "pickup" ? "pickup" : "delivery",
     status: row.status,
     paymentId: row.payment_id ?? undefined,
+    // numeric и bigint[] приходят строками — приводим на границе.
+    itemsDiscount: row.items_discount == null ? 0 : Number(row.items_discount),
+    appliedPromotionIds: (row.applied_promotion_ids ?? []).map(Number),
     createdAt:
       row.created_at instanceof Date
         ? row.created_at.toISOString()
@@ -44,12 +49,19 @@ function rowToOrder(row: OrderRow): Order {
 
 export async function saveOrder(order: Order): Promise<void> {
   await ensureSchema();
+  // Массив id собираем из jsonb-строки: прямое приведение ${json}::bigint[]
+  // зависит от того, как драйвер размечает параметр, а этот путь работает всегда.
+  const promotionIdsJson = JSON.stringify(order.appliedPromotionIds ?? []);
+
   await sql`
-    INSERT INTO orders (id, name, phone, address, lat, lon, comment, items, total_price, delivery_fee, payment_method, delivery_type, status, payment_id, created_at)
+    INSERT INTO orders (id, name, phone, address, lat, lon, comment, items, total_price, delivery_fee, payment_method, delivery_type, status, payment_id, items_discount, applied_promotion_ids, created_at)
     VALUES (
       ${order.id}, ${order.name}, ${order.phone}, ${order.address}, ${order.lat ?? null}, ${order.lon ?? null},
-      ${order.comment ?? null}, ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.deliveryFee}, ${order.paymentMethod},
-      ${order.deliveryType}, ${order.status}, ${order.paymentId ?? null}, ${order.createdAt}
+      ${order.comment ?? null}, ${JSON.stringify(order.items)}::jsonb, ${order.totalPrice}, ${order.deliveryFee},
+      ${order.paymentMethod}, ${order.deliveryType}, ${order.status}, ${order.paymentId ?? null},
+      ${order.itemsDiscount ?? 0},
+      ARRAY(SELECT jsonb_array_elements_text(${promotionIdsJson}::jsonb))::bigint[],
+      ${order.createdAt}
     )
     ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -64,7 +76,9 @@ export async function saveOrder(order: Order): Promise<void> {
       payment_method = EXCLUDED.payment_method,
       delivery_type = EXCLUDED.delivery_type,
       status = EXCLUDED.status,
-      payment_id = EXCLUDED.payment_id
+      payment_id = EXCLUDED.payment_id,
+      items_discount = EXCLUDED.items_discount,
+      applied_promotion_ids = EXCLUDED.applied_promotion_ids
   `;
 }
 
