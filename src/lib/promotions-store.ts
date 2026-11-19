@@ -1,37 +1,7 @@
-import { neon } from "@neondatabase/serverless";
+import { ensureSchema, sql } from "@/lib/db";
 import type { Promotion, PromotionKind, PromotionScope } from "@/types/promotions";
 
-// Единственное место, где создаётся клиент Neon для акций. neon() не держит
-// соединений — каждый запрос это отдельный HTTP-вызов, поэтому экземпляр
-// рядом с src/lib/db.ts ничего не исчерпывает. Если захочешь переиспользовать
-// свой клиент — замени resolveSql на его импорт, остальной файл не меняется.
-
-type SqlClient = ReturnType<typeof neon>;
-
-const CONNECTION_ENV_KEYS = [
-  "DATABASE_URL",
-  "POSTGRES_URL",
-  "NEON_DATABASE_URL",
-  "POSTGRES_PRISMA_URL",
-];
-
-let client: SqlClient | null = null;
-
-function resolveConnectionString(): string {
-  for (const key of CONNECTION_ENV_KEYS) {
-    const value = process.env[key];
-    if (value) return value;
-  }
-
-  throw new Error(
-    `Не найдена строка подключения к базе. Проверь одну из переменных: ${CONNECTION_ENV_KEYS.join(", ")}`,
-  );
-}
-
-export function resolveSql(): SqlClient {
-  if (!client) client = neon(resolveConnectionString());
-  return client;
-}
+// Клиент базы берём из src/lib/db.ts — второго экземпляра быть не должно.
 
 type PromotionRow = {
   id: string | number;
@@ -117,7 +87,7 @@ function mapPromotionRow(row: PromotionRow): Promotion {
 
 /** Включённые акции, чьё окно дат покрывает переданный момент. */
 export async function getDishPromotions(now: Date = new Date()): Promise<Promotion[]> {
-  const sql = resolveSql();
+  await ensureSchema();
   const isoNow = now.toISOString();
 
   const rows = await sql`
@@ -143,7 +113,7 @@ export async function getDishPromotions(now: Date = new Date()): Promise<Promoti
 
 /** Все акции для админки, включая выключенные и просроченные. */
 export async function getAllPromotions(): Promise<Promotion[]> {
-  const sql = resolveSql();
+  await ensureSchema();
 
   const rows = await sql`
     select
