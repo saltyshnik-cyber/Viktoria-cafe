@@ -10,53 +10,6 @@ if (!connectionString) {
 
 export const sql = neon(connectionString);
 
-// Ожидаемые типы таблиц акций. dish_id и category_id — text, потому что
-// menu_items.id и categories.id в проекте текстовые; promotion_id — bigint,
-// потому что promotions.id объявлен BIGSERIAL. Смеси int и text нет.
-const EXPECTED_PROMOTION_COLUMNS: Record<string, Record<string, string>> = {
-  promotions: { id: "bigint" },
-  promotion_dishes: { promotion_id: "bigint", dish_id: "text" },
-  promotion_categories: { promotion_id: "bigint", category_id: "text" },
-};
-
-type ColumnRow = { table_name: string; column_name: string; data_type: string };
-
-/**
- * true — в базе лежат таблицы акций от другой версии схемы. CREATE TABLE
- * IF NOT EXISTS их не тронет и правильная структура не появится, поэтому
- * такие таблицы нужно снести и создать заново.
- */
-async function promotionTablesAreBroken(): Promise<boolean> {
-  const rows = (await sql`
-    SELECT table_name, column_name, data_type
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name IN ('promotions', 'promotion_dishes', 'promotion_categories')
-  `) as ColumnRow[];
-
-  const existing = new Map<string, Map<string, string>>();
-  for (const row of rows) {
-    let table = existing.get(row.table_name);
-    if (!table) {
-      table = new Map<string, string>();
-      existing.set(row.table_name, table);
-    }
-    table.set(row.column_name, row.data_type);
-  }
-
-  for (const [tableName, expected] of Object.entries(EXPECTED_PROMOTION_COLUMNS)) {
-    const actual = existing.get(tableName);
-    // Таблицы нет — CREATE TABLE ниже создаст её в правильном виде.
-    if (!actual) continue;
-
-    for (const [column, dataType] of Object.entries(expected)) {
-      if (actual.get(column) !== dataType) return true;
-    }
-  }
-
-  return false;
-}
-
 let schemaReady: Promise<void> | null = null;
 
 export function ensureSchema(): Promise<void> {
@@ -127,7 +80,7 @@ async function bootstrap(): Promise<void> {
   await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS applied_promotion_ids BIGINT[] NOT NULL DEFAULT '{}'`;
 
   // Служебные отметки о разовых операциях: ensureSchema выполняется заново
-  // на каждом холодном старте, а бэкфилл повторять нельзя.
+  // на каждом холодном старте, а разовые операции повторять нельзя.
   await sql`
     CREATE TABLE IF NOT EXISTS schema_meta (
       key TEXT PRIMARY KEY,
@@ -205,18 +158,20 @@ async function bootstrap(): Promise<void> {
   `;
   await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS seq SERIAL`;
 
-  // Таблицы акций от другой версии схемы CREATE TABLE IF NOT EXISTS не
-  // исправит — сносим их и создаём заново. Дочерние таблицы первыми, CASCADE
-  // на родительской на случай внешних ключей из других таблиц.
-  if (await promotionTablesAreBroken()) {
-    console.warn(
-      "[schema] таблицы акций созданы другой версией схемы — пересоздаю promotions, promotion_dishes, promotion_categories",
-    );
-    await sql`DROP TABLE IF EXISTS promotion_dishes`;
-    await sql`DROP TABLE IF EXISTS promotion_categories`;
-    await sql`DROP TABLE IF EXISTS promotions CASCADE`;
+  // Одноразовый ремонт таблиц акций. Если в базе остались таблицы от ранней
+  // версии схемы (с битым внешним ключом — Postgres отвечает ошибкой 42804),
+  // CREATE TABLE IF NOT EXISTS их не исправит, и /menu продолжит отдавать 500.
+  // Поэтому при отсутствии маркера schema_v2 таблицы сносятся и создаются
+  // заново. Маркер ставится ниже, после успешного создания, — иначе при
+  // каждом холодном старте сносило бы акции, заведённые в админке.
+  const schemaV2 = await sql`SELECT 1 FROM schema_meta WHERE key = 'schema_v2'`;
+  if (schemaV2.length === 0) {
+    console.warn("[schema] одноразовое пересоздание таблиц акций");
+    await sql`DROP TABLE IF EXISTS promotion_dishes, promotion_categories, promotions CASCADE`;
   }
 
+  // Акции. dish_id и category_id — TEXT: id блюд и категорий в проекте
+  // строковые (menu_items.id, categories.id).
   await sql`
     CREATE TABLE IF NOT EXISTS promotions (
       id BIGSERIAL PRIMARY KEY,
@@ -283,6 +238,14 @@ async function bootstrap(): Promise<void> {
     )
   `;
   await sql`CREATE INDEX IF NOT EXISTS banners_active_idx ON banners (is_enabled, priority DESC, sort_order)`;
+
+  if (schemaV2.length === 0) {
+    await sql`
+      INSERT INTO schema_meta (key, value)
+      VALUES ('schema_v2', 'v1')
+      ON CONFLICT (key) DO NOTHING
+    `;
+  }
 
   console.log("[schema] схема готова");
 }
