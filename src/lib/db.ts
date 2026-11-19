@@ -61,6 +61,10 @@ export function ensureSchema(): Promise<void> {
       // До этого доставка в итог не входила: у прежних заказов 0, а total_price
       // остаётся ровно той суммой, которую гости тогда и оплатили.
       await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee INTEGER NOT NULL DEFAULT 0`;
+      // Скидки уровня заказа — колонками, а не в jsonb: по ним нужны sum()
+      // за период и фильтр «заказы с акцией N».
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS items_discount NUMERIC(10, 2) NOT NULL DEFAULT 0`;
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS applied_promotion_ids BIGINT[] NOT NULL DEFAULT '{}'`;
       await sql`
         CREATE TABLE IF NOT EXISTS categories (
           id TEXT PRIMARY KEY,
@@ -88,6 +92,75 @@ export function ensureSchema(): Promise<void> {
         )
       `;
       await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS seq SERIAL`;
+
+      // Акции. dish_id и category_id — TEXT: id блюд и категорий в проекте
+      // строковые (menu_items.id, categories.id).
+      await sql`
+        CREATE TABLE IF NOT EXISTS promotions (
+          id BIGSERIAL PRIMARY KEY,
+          slug TEXT NOT NULL UNIQUE,
+          title TEXT NOT NULL,
+          description TEXT,
+          image_url TEXT,
+          kind TEXT NOT NULL,
+          value NUMERIC(10, 2) NOT NULL DEFAULT 0,
+          max_discount NUMERIC(10, 2),
+          min_order_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+          scope TEXT NOT NULL DEFAULT 'all',
+          starts_at TIMESTAMPTZ,
+          ends_at TIMESTAMPTZ,
+          weekdays SMALLINT[],
+          time_from TIME,
+          time_to TIME,
+          priority INTEGER NOT NULL DEFAULT 0,
+          stackable BOOLEAN NOT NULL DEFAULT FALSE,
+          is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+          created_by TEXT,
+          updated_by TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS promotion_dishes (
+          promotion_id BIGINT NOT NULL REFERENCES promotions (id) ON DELETE CASCADE,
+          dish_id TEXT NOT NULL,
+          PRIMARY KEY (promotion_id, dish_id)
+        )
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS promotion_categories (
+          promotion_id BIGINT NOT NULL REFERENCES promotions (id) ON DELETE CASCADE,
+          category_id TEXT NOT NULL,
+          PRIMARY KEY (promotion_id, category_id)
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS promotions_active_idx ON promotions (is_enabled, priority DESC)`;
+      await sql`CREATE INDEX IF NOT EXISTS promotion_dishes_dish_idx ON promotion_dishes (dish_id)`;
+      await sql`CREATE INDEX IF NOT EXISTS promotion_categories_category_idx ON promotion_categories (category_id)`;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS banners (
+          id BIGSERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          subtitle TEXT,
+          image_url TEXT,
+          image_mobile_url TEXT,
+          button_label TEXT,
+          button_url TEXT,
+          starts_at TIMESTAMPTZ,
+          ends_at TIMESTAMPTZ,
+          frequency TEXT NOT NULL DEFAULT 'once_per_session',
+          priority INTEGER NOT NULL DEFAULT 0,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+          created_by TEXT,
+          updated_by TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS banners_active_idx ON banners (is_enabled, priority DESC, sort_order)`;
     })();
   }
   return schemaReady;
